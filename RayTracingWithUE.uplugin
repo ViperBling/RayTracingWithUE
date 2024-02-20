@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "RayTracingWithUE",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "Artorias",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "RayTracingWithUE",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
