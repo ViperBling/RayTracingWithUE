@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "RayTracingWithUE.h"
-
 #include "Interfaces/IPluginManager.h"
 
 #define LOCTEXT_NAMESPACE "FRayTracingWithUEModule"

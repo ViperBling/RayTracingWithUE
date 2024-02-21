@@ -1,5 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
+using System.IO;
 using UnrealBuildTool;
 
 public class RayTracingWithUE : ModuleRules
@@ -18,6 +19,7 @@ public class RayTracingWithUE : ModuleRules
 		PrivateIncludePaths.AddRange(
 			new string[] {
 				// ... add other private include paths required here ...
+				Path.Combine(GetModuleDirectory("Renderer"), "Private"),
 			}
 			);
 			
@@ -36,15 +38,12 @@ public class RayTracingWithUE : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
-				"Slate",
-				"SlateCore",
 				// ... add private dependencies that you statically link with here ...	
-				"RHI", 
-				"Renderer", 
-				"RenderCore", 
-				"AssetTools", 
-				"UMG", 
-				"MaterialShaderQualitySettings"
+				"Core",
+				"RHI",
+				"Renderer",
+				"Projects",
+				"RenderCore",
 			}
 			);
 		
