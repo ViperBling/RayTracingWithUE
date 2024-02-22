@@ -39,11 +39,16 @@ public class RayTracingWithUE : ModuleRules
 				"CoreUObject",
 				"Engine",
 				// ... add private dependencies that you statically link with here ...	
-				"Core",
+				"Slate",
+				"SlateCore",
+				"InputCore",
+				"UnrealEd",
+				"LevelEditor",
 				"RHI",
 				"Renderer",
 				"Projects",
-				"RenderCore",
+				"RenderCore", 
+				"EditorScriptingUtilities"
 			}
 			);
 		
