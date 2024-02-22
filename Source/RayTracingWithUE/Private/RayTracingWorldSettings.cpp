@@ -23,14 +23,20 @@ void ARayTracingWorldSettings::GatherSceneMeshData()
 
 				if (StaticMesh)
 				{
-					auto PositionVertexBuffer = StaticMesh->GetRenderData()->LODResources[0].VertexBuffers.PositionVertexBuffer;
-					auto IndexBuffer = StaticMesh->GetRenderData()->LODResources[0].IndexBuffer;
+					auto& CurrentLOD = StaticMesh->GetRenderData()->LODResources[0];
+					auto& VBuffers = CurrentLOD.VertexBuffers;
+					auto& IBuffer = CurrentLOD.IndexBuffer;
+
+					auto& PositionVertexBuffer = VBuffers.PositionVertexBuffer;
+					auto& SMVertexBuffer = VBuffers.StaticMeshVertexBuffer;
 
 					const int32 VertexCount = PositionVertexBuffer.GetNumVertices();
 					for (int32 Index = 0; Index < VertexCount; Index++)
 					{
 						const FVector VertexLocationWS = GetActorLocation() + GetTransform().TransformVector(FVector(PositionVertexBuffer.VertexPosition(Index)));
 						UE_LOG(LogTemp, Warning, TEXT("Vertex Location: %s"), *VertexLocationWS.ToString());
+
+						auto Normal = SMVertexBuffer.VertexTangentZ(Index);
 						// Do something with the vertex
 					}
 				}
