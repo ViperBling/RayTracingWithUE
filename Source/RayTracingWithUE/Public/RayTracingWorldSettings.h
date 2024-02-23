@@ -12,6 +12,12 @@ class RAYTRACINGWITHUE_API ARayTracingWorldSettings : public AActor
 	GENERATED_BODY()
 public:
 
+	ARayTracingWorldSettings();
+	
 	UFUNCTION(CallInEditor, Category = RTWithUE)
 	void GatherSceneMeshData();
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void BeginDestroy() override;
 };

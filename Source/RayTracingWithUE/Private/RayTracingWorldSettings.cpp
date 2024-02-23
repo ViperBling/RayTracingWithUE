@@ -2,7 +2,43 @@
 
 #include "Editor.h"
 #include "EditorLevelLibrary.h"
+#include "RayTracingWorldSubSystem.h"
+#include "RawMesh/Public/RawMesh.h"
 #include "Subsystems/EditorActorSubsystem.h"
+
+ARayTracingWorldSettings::ARayTracingWorldSettings()
+{
+}
+
+void ARayTracingWorldSettings::BeginPlay()
+{
+	Super::BeginPlay();
+
+	const UWorld* World = GetWorld();
+	if (World)
+	{
+		URayTracingWorldSubSystem* RayTracingWorldSubSystem = World->GetSubsystem<URayTracingWorldSubSystem>();
+		if (RayTracingWorldSubSystem)
+		{
+			RayTracingWorldSubSystem->OnActorSpawned(this);
+		}
+	}
+}
+
+void ARayTracingWorldSettings::BeginDestroy()
+{
+	const UWorld* World = GetWorld();
+	if (World)
+	{
+		URayTracingWorldSubSystem* RayTracingWorldSubSystem = World->GetSubsystem<URayTracingWorldSubSystem>();
+		if (RayTracingWorldSubSystem)
+		{
+			RayTracingWorldSubSystem->OnActorDeleted(this);
+		}
+	}
+	
+	Super::BeginDestroy();
+}
 
 void ARayTracingWorldSettings::GatherSceneMeshData()
 {
@@ -34,14 +70,14 @@ void ARayTracingWorldSettings::GatherSceneMeshData()
 					for (int32 Index = 0; Index < VertexCount; Index++)
 					{
 						const FVector VertexLocationWS = GetActorLocation() + GetTransform().TransformVector(FVector(PositionVertexBuffer.VertexPosition(Index)));
-						UE_LOG(LogTemp, Warning, TEXT("Vertex Location: %s"), *VertexLocationWS.ToString());
-
 						auto Normal = SMVertexBuffer.VertexTangentZ(Index);
+						
+						UE_LOG(LogTemp, Warning, TEXT("Vertex Location: %s"), *VertexLocationWS.ToString());
+						UE_LOG(LogTemp, Warning, TEXT("Vertex Normal: %s"), *Normal.ToString());
 						// Do something with the vertex
 					}
 				}
 			}
 		}
 	}
-	
 }
