@@ -3,7 +3,6 @@
 #include "Editor.h"
 #include "EditorLevelLibrary.h"
 #include "RayTracingWorldSubSystem.h"
-#include "RawMesh/Public/RawMesh.h"
 #include "Subsystems/EditorActorSubsystem.h"
 
 ARayTracingWorldSettings::ARayTracingWorldSettings()

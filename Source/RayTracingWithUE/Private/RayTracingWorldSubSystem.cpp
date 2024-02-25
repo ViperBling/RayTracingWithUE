@@ -39,7 +39,14 @@ TStatId URayTracingWorldSubSystem::GetStatId() const
 
 void URayTracingWorldSubSystem::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+	if (RayTracingWorldSettings)
+	{
+		FRayTracingSettingsRenderProxy TempSettings;
+		TempSettings.SamplerPerPixel = 1;
+
+		FScopeLock Lock(&Mutex);
+		SettingsProxy = TempSettings;
+	}
 }
 
 void URayTracingWorldSubSystem::OnActorSpawned(AActor* Actor)
@@ -47,7 +54,7 @@ void URayTracingWorldSubSystem::OnActorSpawned(AActor* Actor)
 	ARayTracingWorldSettings* WorldSettings = Cast<ARayTracingWorldSettings>(Actor);
 	if (WorldSettings)
 	{
-		this->RayTracingWorldSettings = WorldSettings;
+		RayTracingWorldSettings = WorldSettings;
 	}
 }
 
