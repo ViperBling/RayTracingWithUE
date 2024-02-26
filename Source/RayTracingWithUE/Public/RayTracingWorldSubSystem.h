@@ -7,6 +7,7 @@
 
 struct FRayTracingSettingsRenderProxy
 {
+	bool bEnableRayTracing;
 	int SamplerPerPixel;
 };
 

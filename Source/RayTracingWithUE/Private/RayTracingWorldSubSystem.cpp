@@ -43,6 +43,7 @@ void URayTracingWorldSubSystem::Tick(float DeltaTime)
 	{
 		FRayTracingSettingsRenderProxy TempSettings;
 		TempSettings.SamplerPerPixel = 1;
+		TempSettings.bEnableRayTracing = SettingsProxy.bEnableRayTracing;
 
 		FScopeLock Lock(&Mutex);
 		SettingsProxy = TempSettings;
