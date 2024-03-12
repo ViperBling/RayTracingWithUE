@@ -1,20 +1,72 @@
 #include "/Engine/Private/Common.ush"
 #include "/Engine/Private/ScreenPass.ush"
+#include "RayTracingCommon.ush"
 
-// RWTexture2D<float4> OutTexture;
+RWTexture2D<float4> OutTexture;
 
-// [numthreads(16, 16, 1)]
-// void RayTracingTestCS(
-// 	int2 DispatchThreadID : SV_DispatchThreadID,
-// 	uint3 GroupThreadID : SV_GroupThreadID)
-// {
-// 	OutTexture[DispatchThreadID.xy] = float4(1, 0, 0, 1);
-// }
+Texture2D InRayTracingResult;
 
-void RayTracingTestPS(
+[numthreads(16, 16, 1)]
+void RayTracingCS(
+	int2 DispatchThreadID : SV_DispatchThreadID,
+	uint3 GroupThreadID : SV_GroupThreadID)
+{
+	const uint2 ViewExtent = View.ViewSizeAndInvSize.xy;
+	const uint2 PixelPos = DispatchThreadID.xy;
+	const float2 ScreenUV = (DispatchThreadID.xy + 0.5) * View.ViewSizeAndInvSize.zw;
+	const float AspectRatio = View.ViewSizeAndInvSize.z / View.ViewSizeAndInvSize.w;
+
+	float3 ScreenPos = float3(ScreenUV * 2 - 1, 1.0);
+	ScreenPos.y *= AspectRatio;
+
+	// float3 ProjectedViewPos = mul(float4(ScreenPos.x * View.NearPlane, ScreenPos.y * View.NearPlane, 0.0, View.NearPlane), View.ClipToView).xyz;
+	//
+	// float Rho = length(ProjectedViewPos);
+	// float3 UnitViewPos = normalize(ProjectedViewPos);
+	// float3 PlanePos = UnitViewPos / UnitViewPos.z;
+	// float2 PolarCoords = float2(sqrt(PlanePos.x * PlanePos.x + PlanePos.y * PlanePos.y), atan2(PlanePos.y, PlanePos.x));
+	//
+	// float3 ViewPos = float3(sin(PolarCoords.x) * cos(PolarCoords.y), sin(PolarCoords.x) * sin(PolarCoords.y), cos(PolarCoords.x)) * Rho;
+	// float3 WorldPos = mul(float4(ViewPos, 0), View.ViewToTranslatedWorld).xyz;
+	
+	// float3 FocusPointLS = float3(DispatchThreadID.xy, 1);
+	// float3 FocusPointWS = mul(float3(ScreenPos, 1.0), View.ViewToTranslatedWorld).xyz;
+	
+	// ResolvedView = ResolveView();
+	// float3 CameraOriginWS = float3(0, 0, 0);
+	// float3 CameraOriginWS = LWCHackToFloat(ResolvedView.WorldCameraOrigin);
+	// float3 SphereCenter = LWCHackToFloat(ResolvedView.WorldCameraOrigin) + (ResolvedView.ViewForward * 1.0f + ResolvedView.ViewRight * 0.5f + ResolvedView.ViewUp * -0.2f) * METER_TO_CENTIMETER;
+	float3 SphereCenter = float3(0, 0, 50);
+	float  SphereRadius = 5;
+
+	float3 FakeLightDir = normalize(-float3(1, 1, 1));
+	
+	FRay ray;
+	
+	for (int rayIndex = 0; rayIndex < 100; rayIndex++)
+	{
+		ray.Origin = float3(0, 0, 0);
+		ray.Direction = normalize(ScreenPos - ray.Origin);
+	
+		FHitInfo HitInfo = RaySphereIntersection(ray, SphereCenter, SphereRadius);
+	
+		if (HitInfo.bHit)
+		{
+			OutTexture[DispatchThreadID.xy] = dot(FakeLightDir, HitInfo.HitNormal);
+		}
+		else
+		{
+			OutTexture[DispatchThreadID.xy] = 0;
+		}
+	}
+
+	// OutTexture[DispatchThreadID.xy] = float4(ScreenUV * 2 - 1, 0.0f, 1.0f);
+}
+
+void RayTracingOutPS(
 	float4 SvPosition : SV_POSITION,
 	out float4 OutValue : SV_Target0
 	)
 {
-	OutValue = float4(1, 1, 0, 1);
+	OutValue = InRayTracingResult.Load(int3(SvPosition.xy, 0));
 }

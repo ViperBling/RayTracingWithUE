@@ -1,0 +1,51 @@
+﻿#pragma once
+
+struct FRay
+{
+	float3 Origin;
+	float3 Direction;
+};
+
+struct FSphere
+{
+	float3 Position;
+	float Radius;
+};
+
+struct FHitInfo
+{
+	bool bHit;
+	float HitDistance;
+	float3 HitPoint;
+	float3 HitNormal;
+};
+
+FHitInfo RaySphereIntersection(FRay Ray, float3 SphereCenter, float SphereRadius)
+{
+	FHitInfo HitInfo = (FHitInfo)0;
+
+	float3 OffsetRayOrigin = Ray.Origin - SphereCenter;
+
+	float a = dot(Ray.Direction, Ray.Direction);
+	float b = 2 * dot(OffsetRayOrigin, Ray.Direction);
+	float c = dot(OffsetRayOrigin, OffsetRayOrigin) - SphereRadius * SphereRadius;
+	float Discriminant = b * b - 4 * a * c;
+
+	if (Discriminant < 0)
+	{
+		HitInfo.bHit = false;
+	}
+	else
+	{
+		float t = (-b - sqrt(Discriminant)) / (2 * a);
+		if (t >= 0)
+		{
+			HitInfo.bHit = true;
+			HitInfo.HitDistance = t;
+			HitInfo.HitPoint = Ray.Origin + t * Ray.Direction;
+			HitInfo.HitNormal = normalize(HitInfo.HitPoint - SphereCenter);
+		}
+	}
+	return HitInfo;
+}
+
