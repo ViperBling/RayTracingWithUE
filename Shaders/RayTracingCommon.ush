@@ -6,6 +6,14 @@ struct FRay
 	float3 Direction;
 };
 
+struct FQuad
+{
+	float3 A;
+	float3 B;
+	float3 C;
+	float3 D;
+};
+
 struct FSphere
 {
 	float3 Position;
@@ -18,7 +26,55 @@ struct FHitInfo
 	float HitDistance;
 	float3 HitPoint;
 	float3 HitNormal;
+	float3 Albedo;
+	float3 Emissive;
 };
+
+// PCG (permuted congruential generator). Thanks to:
+// www.pcg-random.org and www.shadertoy.com/view/XlGcRh
+uint NextRandom(inout uint State)
+{
+	State = State * 747796405 + 2891336453;
+	uint result = ((State >> ((State >> 28) + 4)) ^ State) * 277803737;
+	result = (result >> 22) ^ result;
+	return result;
+}
+
+float RandomValue(inout uint State)
+{
+	return NextRandom(State) / 4294967295.0; // 2^32 - 1
+}
+
+// Random value in normal distribution (with mean=0 and sd=1)
+float RandomValueNormalDistribution(inout uint State)
+{
+	// Thanks to https://stackoverflow.com/a/6178290
+	float theta = 2 * 3.1415926 * RandomValue(State);
+	float rho = sqrt(-2 * log(RandomValue(State)));
+	return rho * cos(theta);
+}
+
+// Calculate a random direction
+float3 RandomDirection(inout uint State)
+{
+	// Thanks to https://math.stackexchange.com/a/1585996
+	float x = RandomValueNormalDistribution(State);
+	float y = RandomValueNormalDistribution(State);
+	float z = RandomValueNormalDistribution(State);
+	return normalize(float3(x, y, z));
+}
+
+float2 RandomPointInCircle(inout uint RngState)
+{
+	float angle = RandomValue(RngState) * 2 * PI;
+	float2 pointOnCircle = float2(cos(angle), sin(angle));
+	return pointOnCircle * sqrt(RandomValue(RngState));
+}
+
+float ScalarTriple(float3 U, float3 V, float3 W)
+{
+	return dot(cross(U, V), W);
+}
 
 FHitInfo RaySphereIntersection(FRay Ray, float3 SphereCenter, float SphereRadius)
 {
@@ -47,5 +103,216 @@ FHitInfo RaySphereIntersection(FRay Ray, float3 SphereCenter, float SphereRadius
 		}
 	}
 	return HitInfo;
+}
+
+bool RayQuadTest(FRay Ray, FQuad Quad, inout FHitInfo HitInfo)
+{
+	float3 QuadNormal = normalize(cross(Quad.C - Quad.A, Quad.C - Quad.B));
+	if (dot(QuadNormal, Ray.Direction) > 0.0f)
+	{
+		QuadNormal *= -1.0f;
+
+		float3 Temp = Quad.D;
+		Quad.D = Quad.A;
+		Quad.A = Temp;
+
+		Temp = Quad.B;
+		Quad.B = Quad.C;
+		Quad.C = Temp;
+	}
+	float3 P = Ray.Origin;
+	float3 Q = Ray.Origin + Ray.Direction;
+	float3 PQ = Q - P;
+	float3 PA = Quad.A - P;
+	float3 PB = Quad.B - P;
+	float3 PC = Quad.C - P;
+
+	float3 M = cross(PC, PQ);
+	float V = dot(PA, M);
+	float3 IntersectPos;
+	if (V >= 0.0f)
+	{
+		float U = -dot(PB, M);
+		if (U < 0.0f) return false;
+		float W = ScalarTriple(PQ, PB, PA);
+		if (W < 0.0f) return false;
+		float Denom = 1.0f / (U + V + W);
+		U *= Denom;
+		V *= Denom;
+		W *= Denom;
+		IntersectPos = U * Quad.A + V * Quad.B + W * Quad.C;
+	}
+	else
+	{
+		float3 PD = Quad.D - P;
+		float U = dot(PD, M);
+		if (U < 0.0f) return false;
+		float W = ScalarTriple(PQ, PA, PD);
+		if (W < 0.0f) return false;
+		V = -V;
+		float Denom = 1.0f / (U + V + W);
+		U *= Denom;
+		V *= Denom;
+		W *= Denom;
+		IntersectPos = U * Quad.A + V * Quad.D + W * Quad.C;
+	}
+	float t;
+	if (abs(Ray.Direction.x) > 0.1f)
+	{
+		t = (IntersectPos.x - Ray.Origin.x) / Ray.Direction.x;
+	}
+	else if (abs(Ray.Direction.y) > 0.1f)
+	{
+		t = (IntersectPos.y - Ray.Origin.y) / Ray.Direction.y;
+	}
+	else
+	{
+		t = (IntersectPos.z - Ray.Origin.z) / Ray.Direction.z;
+	}
+	if (t < HitInfo.HitDistance)
+	{
+		HitInfo.HitDistance = t;
+		HitInfo.HitNormal = QuadNormal;
+		return true;
+	}
+	return false;
+}
+
+bool RaySphereTest(FRay Ray, FSphere Sphere, inout FHitInfo HitInfo)
+{
+	float3 OffsetRayOrigin = Ray.Origin - Sphere.Position;
+
+	float a = dot(Ray.Direction, Ray.Direction);
+	float b = 2 * dot(OffsetRayOrigin, Ray.Direction);
+	float c = dot(OffsetRayOrigin, OffsetRayOrigin) - Sphere.Radius * Sphere.Radius;
+	float Discriminant = b * b - 4 * a * c;
+
+	if (Discriminant < 0)
+	{
+		HitInfo.bHit = false;
+		return false;
+	}
+	else
+	{
+		float t = (-b - sqrt(Discriminant)) / (2 * a);
+		if (t >= 0)
+		{
+			HitInfo.bHit = true;
+			HitInfo.HitDistance = t;
+			HitInfo.HitPoint = Ray.Origin + t * Ray.Direction;
+			HitInfo.HitNormal = normalize(HitInfo.HitPoint - Sphere.Position);
+			return true;
+		}
+	}
+	return false;
+}
+
+// FHitInfo RayCollision(FRay Ray)
+// {
+	// FHitInfo closestHit = (FHitInfo)0;
+	// closestHit.HitDistance = INFINITE_FLOAT;
+
+	// FHitInfo HitInfo = RaySphereIntersection(Ray, float3(0, 0, 30), 5);
+	// if (HitInfo.bHit && HitInfo.HitDistance < closestHit.HitDistance)
+	// {
+	// 	closestHit = HitInfo;
+	// }
+	// return closestHit;
+// }
+
+void TestScene(in FRay Ray, inout FHitInfo HitInfo)
+{
+	FQuad Quad;
+	Quad.A = float3(-20.0f, -15.0f, 21.0f);
+	Quad.B = float3( 20.0f, -15.0f, 21.0f);
+	Quad.C = float3( 20.0f,  15.0f, 21.0f);
+	Quad.D = float3(-20.0f,  15.0f, 21.0f);
+	if (RayQuadTest(Ray, Quad, HitInfo))
+	{
+		HitInfo.Albedo = float3(0.7, 0.7, 0.7);
+		HitInfo.Emissive = 0.0;
+	}
+	
+	FSphere Sphere0;
+	Sphere0.Position = float3(0, 10, 20);
+	Sphere0.Radius = 3;
+
+	FSphere Sphere1;
+	Sphere1.Position = float3(-15, -5, 20);
+	Sphere1.Radius = 1;
+
+	FSphere Sphere2;
+	Sphere2.Position = float3(0, -5, 20);
+	Sphere2.Radius = 1;
+
+	FSphere Sphere3;
+	Sphere3.Position = float3(15, -5, 20);
+	Sphere3.Radius = 1;
+
+	if (RaySphereTest(Ray, Sphere0, HitInfo))
+	{
+		HitInfo.Albedo = float3(1, 1, 1);
+		HitInfo.Emissive = float3(1.0f, 0.7f, 0.4f) * 100;
+	}
+	if (RaySphereTest(Ray, Sphere1, HitInfo))
+	{
+		HitInfo.Albedo = float3(1, 0.1, 0.1);
+		HitInfo.Emissive = float3(0, 0, 0);
+	}
+	if (RaySphereTest(Ray, Sphere2, HitInfo))
+	{
+		HitInfo.Albedo = float3(0.1, 1, 0.1);
+		HitInfo.Emissive = float3(0, 0, 0);
+	}
+	if (RaySphereTest(Ray, Sphere3, HitInfo))
+	{
+		HitInfo.Albedo = float3(0.1, 0.1, 1);
+		HitInfo.Emissive = float3(0, 0, 0);
+	}
+}
+
+float3 Trace(FRay Ray, inout int RngState)
+{
+	float3 IncomingLight = 0;
+	float3 RayColor = 1;
+	
+	for (int bounceIndex = 0; bounceIndex < 100; bounceIndex++)
+	{
+		// FHitInfo HitInfo = RayCollision(Ray);
+		//
+		// if (HitInfo.bHit)
+		// {
+		// 	Ray.Origin = HitInfo.HitPoint;
+		// 	float3 DiffuseDir = normalize(HitInfo.HitNormal + RandomDirection(RngState));
+		// 	float3 SpecularDir = reflect(Ray.Direction, HitInfo.HitNormal);
+		// 	Ray.Direction = normalize(lerp(DiffuseDir, SpecularDir, 0.5));
+		//
+		// 	IncomingLight += RayColor;
+		// 	RayColor *= float3(1, 1, 1);
+		//
+		// 	float P = max(RayColor.r, max(RayColor.g, RayColor.b));
+		// 	if (RandomValue(RngState) >= P) break;
+		//
+		// 	RayColor *= 1.0 / PI;
+		// }
+		// else
+		// {
+		// 	// IncomingLight += RayColor;
+		// }
+
+		FHitInfo HitInfo = (FHitInfo)0;
+		HitInfo.HitDistance = INFINITE_FLOAT;
+
+		TestScene(Ray, HitInfo);
+		if (HitInfo.HitDistance == INFINITE_FLOAT) break;
+		
+		Ray.Origin = HitInfo.HitPoint;
+		Ray.Direction = normalize(HitInfo.HitNormal + RandomDirection(RngState));
+		
+		IncomingLight += HitInfo.Emissive * RayColor;
+		RayColor *= HitInfo.Albedo;
+		
+	}
+	return IncomingLight;
 }
 
