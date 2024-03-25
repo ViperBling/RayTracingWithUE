@@ -2,8 +2,9 @@
 #include "/Engine/Private/ScreenPass.ush"
 #include "RayTracingCommon.ush"
 
-RWTexture2D<float4> OutTexture;
+RWTexture2D<float4> OutputUAV;
 
+Texture2D InSceneColor;
 Texture2D InRayTracingResult;
 
 [numthreads(16, 16, 1)]
@@ -19,15 +20,17 @@ void RayTracingCS(
 
 	ResolvedView = ResolveView();
 	
-	uint RngState = PixelIndex + ResolvedView.FrameCounter * 719393;
+	uint RngState = PixelIndex + ResolvedView.FrameNumber * 719393;
 
 	float3 ScreenPos = float3(ScreenUV * 2 - 1, 1.0);
 	ScreenPos.y *= -AspectRatio;
 	
 	FRay Ray;
 	float3 TotalIncomingLight = 0;
+
+	float4 CurrentSceneColor = 0;
 	
-	for (int RayIndex = 0; RayIndex < 100; RayIndex++)
+	// for (int RayIndex = 0; RayIndex < 100; RayIndex++)
 	{
 		float2 DefocusJitter = RandomPointInCircle(RngState) * 0.5 / ViewExtent.x;
 		// Ray.Origin = float3(0, 0, 0) + float3(1, 0, 0) * DefocusJitter.x + float3(0, 1, 0) * DefocusJitter.y;
@@ -38,7 +41,9 @@ void RayTracingCS(
 		TotalIncomingLight += Trace(Ray, RngState);
 	}
 
-	OutTexture[DispatchThreadID.xy] = float4(TotalIncomingLight / 100, 1.0f);
+	TotalIncomingLight = lerp(CurrentSceneColor.rgb, TotalIncomingLight, 1 / float(ResolvedView.FrameCounter + 1.0));
+
+	OutputUAV[DispatchThreadID.xy] = float4(TotalIncomingLight, 1.0f);
 }
 
 void RayTracingOutPS(

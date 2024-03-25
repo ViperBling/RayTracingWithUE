@@ -10,6 +10,7 @@
 
 #include "RayTracingWorldSubSystem.h"
 #include "RayTracingRendering.h"
+#include "ScenePrivate.h"
 
 
 FRayTracingViewExtension::FRayTracingViewExtension(const FAutoRegister& AutoRegister, URayTracingWorldSubSystem* InWorldSubSystem)
@@ -74,14 +75,15 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 		FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(GMaxRHIFeatureLevel);
 		FScreenPassTextureViewport Viewport(View.ViewRect);
 
-		FRDGTextureRef RayTracingOut{};
+		// FRDGTextureRef RayTracingOut{};
 
 		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV);
-		RayTracingOut = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"));
+		RayTracingResultTexture = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"));
 
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
-		RayTracingCSParams->OutTexture = GraphBuilder.CreateUAV(RayTracingOut);
+		// RayTracingCSParams->InputSRV = GraphBuilder.CreateSRV(Inputs.SceneTextures->GetContents()->SceneColorTexture);
+		RayTracingCSParams->OutputUAV = GraphBuilder.CreateUAV(RayTracingResultTexture);
 
 		FComputeShaderUtils::AddPass(
 			GraphBuilder,
@@ -91,8 +93,8 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 			FComputeShaderUtils::GetGroupCount(Viewport.Rect.Size(), FIntPoint(16, 16)));
 	
 		auto* FullScreenPassParameters = GraphBuilder.AllocParameters<FRayTracingOutPS::FParameters>();
-		FullScreenPassParameters->InRayTracingResult = GraphBuilder.CreateSRV(RayTracingOut);
-		FullScreenPassParameters->RayTracingViewExtension.RenderTargets[0] = FRenderTargetBinding((*Inputs.SceneTextures)->SceneColorTexture, ERenderTargetLoadAction::ELoad);
+		FullScreenPassParameters->InRayTracingResult = GraphBuilder.CreateSRV(RayTracingResultTexture);
+		FullScreenPassParameters->RayTracingViewExtension.RenderTargets[0] = FRenderTargetBinding((*Inputs.SceneTextures)->SceneColorTexture, ERenderTargetLoadAction::EClear);
 	
 		FPixelShaderUtils::AddFullscreenPass(
 			GraphBuilder,

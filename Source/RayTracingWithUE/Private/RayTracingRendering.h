@@ -15,7 +15,8 @@ public:
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters,)
 		SHADER_PARAMETER_STRUCT_REF(FViewUniformShaderParameters, View)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, OutTexture)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, InputSRV)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, OutputUAV)
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)

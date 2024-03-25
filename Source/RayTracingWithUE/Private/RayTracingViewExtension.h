@@ -25,4 +25,9 @@ private:
 private:
 	URayTracingWorldSubSystem* WorldSubSystem {};
 	FRayTracingSettingsRenderProxy SettingsProxy {};
+	
+	FRDGTextureRef RayTracingResultTexture {};
+	FRDGTextureRef LastFrameResult {};
+
+	inline static int TextureSwitch = 1;
 };

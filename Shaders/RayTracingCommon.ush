@@ -229,12 +229,12 @@ void TestScene(in FRay Ray, inout FHitInfo HitInfo)
 	Quad.D = float3(-20.0f,  15.0f, 21.0f);
 	if (RayQuadTest(Ray, Quad, HitInfo))
 	{
-		HitInfo.Albedo = float3(0.7, 0.7, 0.7);
+		HitInfo.Albedo = float3(0.8, 0.9, 0.9);
 		HitInfo.Emissive = 0.0;
 	}
 	
 	FSphere Sphere0;
-	Sphere0.Position = float3(0, 10, 20);
+	Sphere0.Position = float3(0, 5, 20);
 	Sphere0.Radius = 3;
 
 	FSphere Sphere1;
@@ -278,28 +278,6 @@ float3 Trace(FRay Ray, inout int RngState)
 	
 	for (int bounceIndex = 0; bounceIndex < 100; bounceIndex++)
 	{
-		// FHitInfo HitInfo = RayCollision(Ray);
-		//
-		// if (HitInfo.bHit)
-		// {
-		// 	Ray.Origin = HitInfo.HitPoint;
-		// 	float3 DiffuseDir = normalize(HitInfo.HitNormal + RandomDirection(RngState));
-		// 	float3 SpecularDir = reflect(Ray.Direction, HitInfo.HitNormal);
-		// 	Ray.Direction = normalize(lerp(DiffuseDir, SpecularDir, 0.5));
-		//
-		// 	IncomingLight += RayColor;
-		// 	RayColor *= float3(1, 1, 1);
-		//
-		// 	float P = max(RayColor.r, max(RayColor.g, RayColor.b));
-		// 	if (RandomValue(RngState) >= P) break;
-		//
-		// 	RayColor *= 1.0 / PI;
-		// }
-		// else
-		// {
-		// 	// IncomingLight += RayColor;
-		// }
-
 		FHitInfo HitInfo = (FHitInfo)0;
 		HitInfo.HitDistance = INFINITE_FLOAT;
 
@@ -311,7 +289,6 @@ float3 Trace(FRay Ray, inout int RngState)
 		
 		IncomingLight += HitInfo.Emissive * RayColor;
 		RayColor *= HitInfo.Albedo;
-		
 	}
 	return IncomingLight;
 }
