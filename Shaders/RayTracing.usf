@@ -4,7 +4,7 @@
 
 RWTexture2D<float4> OutputUAV;
 
-Texture2D InSceneColor;
+Texture2D LastFrameResult;
 Texture2D InRayTracingResult;
 
 [numthreads(16, 16, 1)]
@@ -28,7 +28,7 @@ void RayTracingCS(
 	FRay Ray;
 	float3 TotalIncomingLight = 0;
 
-	float4 CurrentSceneColor = 0;
+	float4 LastFrameSceneColor = LastFrameResult.Load(int3(PixelPos, 0));
 	
 	// for (int RayIndex = 0; RayIndex < 100; RayIndex++)
 	{
@@ -41,7 +41,7 @@ void RayTracingCS(
 		TotalIncomingLight += Trace(Ray, RngState);
 	}
 
-	TotalIncomingLight = lerp(CurrentSceneColor.rgb, TotalIncomingLight, 1 / float(ResolvedView.FrameCounter + 1.0));
+	TotalIncomingLight = lerp(LastFrameSceneColor.rgb, TotalIncomingLight, 1 / float(ResolvedView.FrameCounter + 1.0));
 
 	OutputUAV[DispatchThreadID.xy] = float4(TotalIncomingLight, 1.0f);
 }
@@ -51,5 +51,6 @@ void RayTracingOutPS(
 	out float4 OutValue : SV_Target0
 	)
 {
-	OutValue = InRayTracingResult.Load(int3(SvPosition.xy, 0));
+    float4 CurrentFrameSceneColor = InRayTracingResult.Load(int3(SvPosition.xy, 0));
+	OutValue = CurrentFrameSceneColor;
 }

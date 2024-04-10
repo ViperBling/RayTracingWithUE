@@ -24,6 +24,10 @@ void FRayTracingViewExtension::SetupViewFamily(FSceneViewFamily& InViewFamily)
 	SettingsProxy = WorldSubSystem->GetSettings();
 }
 
+void FRayTracingViewExtension::PreRenderView_RenderThread(FRDGBuilder& GraphBuilder, FSceneView& InView)
+{
+}
+
 void FRayTracingViewExtension::PostRenderBasePassDeferred_RenderThread(FRDGBuilder& GraphBuilder, FSceneView& InView, const FRenderTargetBindingSlots& RenderTargets, TRDGUniformBufferRef<FSceneTextureUniformParameters> SceneTextures)
 {
 	check(InView.bIsViewInfo)
@@ -74,28 +78,38 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	{
 		FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(GMaxRHIFeatureLevel);
 		FScreenPassTextureViewport Viewport(View.ViewRect);
-
-		// FRDGTextureRef RayTracingOut{};
-
-		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV);
+	    
+		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable);
 		RayTracingResultTexture = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"));
-
+	    if (LastFrameResult == nullptr)
+	    {
+	        LastFrameResult = GraphBuilder.CreateTexture(Desc, TEXT("LastFrameResult"), ERDGTextureFlags::MultiFrame);
+            LastFrameSRV = GraphBuilder.CreateSRV(LastFrameResult);
+	        LastFrameUAV = GraphBuilder.CreateUAV(LastFrameResult);
+	        AddClearRenderTargetPass(GraphBuilder, LastFrameResult, FLinearColor::Black);
+	    }
+	    
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
-		// RayTracingCSParams->InputSRV = GraphBuilder.CreateSRV(Inputs.SceneTextures->GetContents()->SceneColorTexture);
+		RayTracingCSParams->LastFrameResult = GraphBuilder.CreateSRV(LastFrameResult);
 		RayTracingCSParams->OutputUAV = GraphBuilder.CreateUAV(RayTracingResultTexture);
-
+	    
 		FComputeShaderUtils::AddPass(
 			GraphBuilder,
 			RDG_EVENT_NAME("RayTracingCompute"),
 			TShaderMapRef<FRayTracingCS>(ShaderMap),
 			RayTracingCSParams,
 			FComputeShaderUtils::GetGroupCount(Viewport.Rect.Size(), FIntPoint(16, 16)));
-	
+
+	    // 将RayTracingResultTexture内容复制到LastFrameResult
+	    FRHICopyTextureInfo CopyInfo;
+	    CopyInfo.Size = FIntVector(Viewport.Rect.Size().X, Viewport.Rect.Size().Y, 0);
+	    TransitionAndCopyTexture(GraphBuilder.RHICmdList, RayTracingResultTexture->GetRHI(), LastFrameResult->GetRHI(), CopyInfo);
+	    
 		auto* FullScreenPassParameters = GraphBuilder.AllocParameters<FRayTracingOutPS::FParameters>();
 		FullScreenPassParameters->InRayTracingResult = GraphBuilder.CreateSRV(RayTracingResultTexture);
 		FullScreenPassParameters->RayTracingViewExtension.RenderTargets[0] = FRenderTargetBinding((*Inputs.SceneTextures)->SceneColorTexture, ERenderTargetLoadAction::EClear);
-	
+	    
 		FPixelShaderUtils::AddFullscreenPass(
 			GraphBuilder,
 			ShaderMap,
