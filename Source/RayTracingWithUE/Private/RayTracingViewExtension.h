@@ -29,9 +29,6 @@ private:
 
     FIntPoint ViewRectSize;
 	FRDGTextureRef RayTracingResultTexture {};
-	FRDGTextureRef LastFrameResult {};
-    FRDGTextureSRVRef LastFrameSRV {};
-    FRDGTextureUAVRef LastFrameUAV {};
-
-	inline static int TextureSwitch = 1;
+	TRefCountPtr<FRHITexture2D> LastFrameResult;
+    TRefCountPtr<IPooledRenderTarget> LastFrameTempRT;
 };
