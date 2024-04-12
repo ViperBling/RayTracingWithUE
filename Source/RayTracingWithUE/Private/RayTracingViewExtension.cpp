@@ -42,7 +42,7 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	{
 		return;
 	}
-
+    
 	if (SettingsProxy.bEnableRayTracing)
 	{
 		FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(GMaxRHIFeatureLevel);
@@ -51,7 +51,7 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable);
 		RayTracingResultTexture = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"), ERDGTextureFlags::MultiFrame);
 	    
-	    if (!LastFrameTempRT.IsValid())
+	    if (!LastFrameResult.IsValid())
 	    {
 	        FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("LastFrameResult"), Viewport.Extent, PF_A32B32G32R32F);
 	        CreateDesc.SetFlags(ETextureCreateFlags::ShaderResource | ETextureCreateFlags::RenderTargetable);
@@ -73,7 +73,7 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 			RDG_EVENT_NAME("RayTracingCompute"),
 			TShaderMapRef<FRayTracingCS>(ShaderMap),
 			RayTracingCSParams,
-			FComputeShaderUtils::GetGroupCount(Viewport.Rect.Size(), FIntPoint(16, 16)));
+			FComputeShaderUtils::GetGroupCount(Viewport.Extent, FIntPoint(16, 16)));
 
 	    // 将RayTracingResultTexture内容复制到LastFrameResult
 	    FRHICopyTextureInfo CopyInfo;
