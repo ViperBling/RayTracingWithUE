@@ -21,6 +21,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "RayTracingWithUE")
 	bool bEnableRayTracing = false;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = RayTracingWithUE)
+	TObjectPtr<UTextureCube> SkyDomeCube = nullptr;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void BeginDestroy() override;

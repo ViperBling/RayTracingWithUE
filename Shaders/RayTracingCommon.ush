@@ -223,13 +223,13 @@ bool RaySphereTest(FRay Ray, FSphere Sphere, inout FHitInfo HitInfo)
 void TestScene(in FRay Ray, inout FHitInfo HitInfo)
 {
 	FQuad Quad;
-	Quad.A = float3(-20.0f, -15.0f, 21.0f);
-	Quad.B = float3( 20.0f, -15.0f, 21.0f);
-	Quad.C = float3( 20.0f,  15.0f, 21.0f);
-	Quad.D = float3(-20.0f,  15.0f, 21.0f);
+	Quad.A = float3(-10.0f, -10.0f, 10.0f);
+	Quad.B = float3( 10.0f, -10.0f, 10.0f);
+	Quad.C = float3( 10.0f,  10.0f, 10.0f);
+	Quad.D = float3(-10.0f,  10.0f, 10.0f);
 	if (RayQuadTest(Ray, Quad, HitInfo))
 	{
-		HitInfo.Albedo = float3(0.8, 0.9, 0.9);
+		HitInfo.Albedo = float3(0.9, 0.9, 0.9);
 		HitInfo.Emissive = 0.0;
 	}
 	
@@ -276,7 +276,7 @@ float3 Trace(FRay Ray, inout int RngState)
 	float3 IncomingLight = 0;
 	float3 RayColor = 1;
 	
-	for (int bounceIndex = 0; bounceIndex < 100; bounceIndex++)
+	for (int bounceIndex = 0; bounceIndex < 500; bounceIndex++)
 	{
 		FHitInfo HitInfo = (FHitInfo)0;
 		HitInfo.HitDistance = INFINITE_FLOAT;

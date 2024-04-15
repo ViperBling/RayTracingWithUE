@@ -51,6 +51,8 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable);
 		RayTracingResultTexture = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"), ERDGTextureFlags::MultiFrame);
 
+		
+
 	    bool bShouldResize = false;
 	    if (ViewRectSize != Viewport.Extent)
 	    {
@@ -68,10 +70,13 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	        // LastFrameTempRT = CreateRenderTarget(TestTexture, TEXT("LastFrameRT"));
 	    }
 
+		auto CubeTexture = RegisterExternalTexture(GraphBuilder, SettingsProxy.SkyDomeCube, TEXT("SkyDomeCube"));
 	    FRDGTextureRef LastFrameResultRDG = RegisterExternalTexture(GraphBuilder, LastFrameResult, TEXT("LastFrameResult"));
 	    
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
+		RayTracingCSParams->SkyDomeCube = GraphBuilder.CreateSRV(CubeTexture);
+		RayTracingCSParams->SkyDomeCubeSampler = TStaticSamplerState<SF_Trilinear>::GetRHI();
 		RayTracingCSParams->LastFrameResult = GraphBuilder.CreateSRV(LastFrameResultRDG);
 		RayTracingCSParams->OutputUAV = GraphBuilder.CreateUAV(RayTracingResultTexture);
 	    

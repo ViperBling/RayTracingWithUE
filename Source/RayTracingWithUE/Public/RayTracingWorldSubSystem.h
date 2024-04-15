@@ -9,6 +9,7 @@ struct FRayTracingSettingsRenderProxy
 {
 	bool bEnableRayTracing;
 	int SamplerPerPixel;
+	FRHITextureCube* SkyDomeCube;
 };
 
 UCLASS()

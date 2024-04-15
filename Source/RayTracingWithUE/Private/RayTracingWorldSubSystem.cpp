@@ -1,6 +1,8 @@
 ﻿#include "RayTracingWorldSubSystem.h"
 #include "EngineUtils.h"
 #include "SceneViewExtension.h"
+#include "SystemTextures.h"
+#include "Engine/TextureCube.h"
 
 void URayTracingWorldSubSystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -44,7 +46,14 @@ void URayTracingWorldSubSystem::Tick(float DeltaTime)
 		FRayTracingSettingsRenderProxy TempSettings;
 		TempSettings.SamplerPerPixel = 1;
 		TempSettings.bEnableRayTracing = RayTracingWorldSettings->bEnableRayTracing;
-
+		if (RayTracingWorldSettings->SkyDomeCube != nullptr)
+		{
+			TempSettings.SkyDomeCube = static_cast<FRHITextureCube*>(RayTracingWorldSettings->SkyDomeCube->GetResource()->TextureRHI);
+		}
+		else
+		{
+			TempSettings.SkyDomeCube = GSystemTextures.BlackDummy->GetRHI();
+		}
 		FScopeLock Lock(&Mutex);
 		SettingsProxy = TempSettings;
 	}
