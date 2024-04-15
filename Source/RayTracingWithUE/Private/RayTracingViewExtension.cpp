@@ -50,8 +50,15 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	    
 		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable);
 		RayTracingResultTexture = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"), ERDGTextureFlags::MultiFrame);
+
+	    bool bShouldResize = false;
+	    if (ViewRectSize != Viewport.Extent)
+	    {
+	        ViewRectSize = Viewport.Extent;
+	        bShouldResize = true;
+	    }
 	    
-	    if (!LastFrameResult.IsValid())
+	    if (!LastFrameResult.IsValid() || bShouldResize)
 	    {
 	        FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("LastFrameResult"), Viewport.Extent, PF_A32B32G32R32F);
 	        CreateDesc.SetFlags(ETextureCreateFlags::ShaderResource | ETextureCreateFlags::RenderTargetable);
