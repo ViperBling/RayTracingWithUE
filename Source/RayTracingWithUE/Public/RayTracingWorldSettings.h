@@ -5,6 +5,7 @@
 #include "RayTracingWorldSettings.generated.h"
 
 class UEditorActorSubsystem;
+class UTextureCube;
 
 UCLASS()
 class RAYTRACINGWITHUE_API ARayTracingWorldSettings : public AActor

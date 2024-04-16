@@ -1,5 +1,19 @@
 ﻿#pragma once
 
+#define SAMPLES_PER_PIXEL 1
+#define MAX_BOUNCE 50
+
+#define LAMBERTIAN 0
+#define METAL 1
+#define DIELECTRIC 2
+
+struct FMaterial
+{
+    int Type;
+    float3 Albedo;
+    float Params;
+};
+
 struct FRay
 {
 	float3 Origin;
@@ -18,6 +32,7 @@ struct FSphere
 {
 	float3 Position;
 	float Radius;
+    FMaterial Material;
 };
 
 struct FHitInfo
@@ -28,6 +43,7 @@ struct FHitInfo
 	float3 HitNormal;
 	float3 Albedo;
 	float3 Emissive;
+    FMaterial Material;
 };
 
 // PCG (permuted congruential generator). Thanks to:
@@ -76,34 +92,34 @@ float ScalarTriple(float3 U, float3 V, float3 W)
 	return dot(cross(U, V), W);
 }
 
-FHitInfo RaySphereIntersection(FRay Ray, float3 SphereCenter, float SphereRadius)
-{
-	FHitInfo HitInfo = (FHitInfo)0;
-
-	float3 OffsetRayOrigin = Ray.Origin - SphereCenter;
-
-	float a = dot(Ray.Direction, Ray.Direction);
-	float b = 2 * dot(OffsetRayOrigin, Ray.Direction);
-	float c = dot(OffsetRayOrigin, OffsetRayOrigin) - SphereRadius * SphereRadius;
-	float Discriminant = b * b - 4 * a * c;
-
-	if (Discriminant < 0)
-	{
-		HitInfo.bHit = false;
-	}
-	else
-	{
-		float t = (-b - sqrt(Discriminant)) / (2 * a);
-		if (t >= 0)
-		{
-			HitInfo.bHit = true;
-			HitInfo.HitDistance = t;
-			HitInfo.HitPoint = Ray.Origin + t * Ray.Direction;
-			HitInfo.HitNormal = normalize(HitInfo.HitPoint - SphereCenter);
-		}
-	}
-	return HitInfo;
-}
+// FHitInfo RaySphereIntersection(FRay Ray, float3 SphereCenter, float SphereRadius)
+// {
+// 	FHitInfo HitInfo = (FHitInfo)0;
+//
+// 	float3 OffsetRayOrigin = Ray.Origin - SphereCenter;
+//
+// 	float a = dot(Ray.Direction, Ray.Direction);
+// 	float b = 2 * dot(OffsetRayOrigin, Ray.Direction);
+// 	float c = dot(OffsetRayOrigin, OffsetRayOrigin) - SphereRadius * SphereRadius;
+// 	float Discriminant = b * b - 4 * a * c;
+//
+// 	if (Discriminant < 0)
+// 	{
+// 		HitInfo.bHit = false;
+// 	}
+// 	else
+// 	{
+// 		float t = (-b - sqrt(Discriminant)) / (2 * a);
+// 		if (t >= 0)
+// 		{
+// 			HitInfo.bHit = true;
+// 			HitInfo.HitDistance = t;
+// 			HitInfo.HitPoint = Ray.Origin + t * Ray.Direction;
+// 			HitInfo.HitNormal = normalize(HitInfo.HitPoint - SphereCenter);
+// 		}
+// 	}
+// 	return HitInfo;
+// }
 
 bool RayQuadTest(FRay Ray, FQuad Quad, inout FHitInfo HitInfo)
 {
@@ -183,92 +199,85 @@ bool RaySphereTest(FRay Ray, FSphere Sphere, inout FHitInfo HitInfo)
 	float3 OffsetRayOrigin = Ray.Origin - Sphere.Position;
 
 	float a = dot(Ray.Direction, Ray.Direction);
-	float b = 2 * dot(OffsetRayOrigin, Ray.Direction);
+	float b = dot(OffsetRayOrigin, Ray.Direction);
 	float c = dot(OffsetRayOrigin, OffsetRayOrigin) - Sphere.Radius * Sphere.Radius;
-	float Discriminant = b * b - 4 * a * c;
+	float Discriminant = b * b - a * c;
 
-	if (Discriminant < 0)
+	if (Discriminant > 0.0001)
 	{
-		HitInfo.bHit = false;
-		return false;
+	    bool bFromInside = false;
+	    float t = (-b - sqrt(Discriminant)) / a;
+	    if (t < 0.0001)
+	    {
+	        bFromInside = true;
+	        t = (-b + sqrt(Discriminant)) / a;
+	    }
+	    if (t > 0.0001 && t < HitInfo.HitDistance)
+	    {
+	        HitInfo.bHit = true;
+	        HitInfo.HitDistance = t;
+	        HitInfo.HitPoint = Ray.Origin + t * Ray.Direction;
+	        HitInfo.HitNormal = normalize(HitInfo.HitPoint - Sphere.Position) * (bFromInside ? -1.0 : 1.0);
+	        return true;
+	    }
 	}
-	else
-	{
-		float t = (-b - sqrt(Discriminant)) / (2 * a);
-		if (t >= 0)
-		{
-			HitInfo.bHit = true;
-			HitInfo.HitDistance = t;
-			HitInfo.HitPoint = Ray.Origin + t * Ray.Direction;
-			HitInfo.HitNormal = normalize(HitInfo.HitPoint - Sphere.Position);
-			return true;
-		}
-	}
+    
 	return false;
 }
 
-// FHitInfo RayCollision(FRay Ray)
-// {
-	// FHitInfo closestHit = (FHitInfo)0;
-	// closestHit.HitDistance = INFINITE_FLOAT;
-
-	// FHitInfo HitInfo = RaySphereIntersection(Ray, float3(0, 0, 30), 5);
-	// if (HitInfo.bHit && HitInfo.HitDistance < closestHit.HitDistance)
-	// {
-	// 	closestHit = HitInfo;
-	// }
-	// return closestHit;
-// }
-
-void TestScene(in FRay Ray, inout FHitInfo HitInfo)
+void InitScene()
 {
-	FQuad Quad;
-	Quad.A = float3(-10.0f, -10.0f, 10.0f);
-	Quad.B = float3( 10.0f, -10.0f, 10.0f);
-	Quad.C = float3( 10.0f,  10.0f, 10.0f);
-	Quad.D = float3(-10.0f,  10.0f, 10.0f);
-	if (RayQuadTest(Ray, Quad, HitInfo))
-	{
-		HitInfo.Albedo = float3(0.9, 0.9, 0.9);
-		HitInfo.Emissive = 0.0;
-	}
-	
-	FSphere Sphere0;
-	Sphere0.Position = float3(0, 5, 20);
-	Sphere0.Radius = 3;
+    
+}
 
-	FSphere Sphere1;
-	Sphere1.Position = float3(-15, -5, 20);
-	Sphere1.Radius = 1;
+void TestScene(FRay Ray, inout FHitInfo HitInfo)
+{
+	// FQuad Quad;
+	// Quad.A = float3(-10.0f, -10.0f, 10.0f);
+	// Quad.B = float3( 10.0f, -10.0f, 10.0f);
+	// Quad.C = float3( 10.0f,  10.0f, 10.0f);
+	// Quad.D = float3(-10.0f,  10.0f, 10.0f);
+	// if (RayQuadTest(Ray, Quad, HitInfo))
+	// {
+	// 	HitInfo.Albedo = float3(0.9, 0.9, 0.9);
+	// 	HitInfo.Emissive = 0.0;
+	// }
 
-	FSphere Sphere2;
-	Sphere2.Position = float3(0, -5, 20);
-	Sphere2.Radius = 1;
+    FSphere LightSphere;
+    LightSphere.Position = float3(0, 1, 0);
+    LightSphere.Radius = 0.1;
 
-	FSphere Sphere3;
-	Sphere3.Position = float3(15, -5, 20);
-	Sphere3.Radius = 1;
+    FSphere Sphere0;
+    Sphere0.Position = float3(0, -1, 2.2);
+    Sphere0.Radius = 1;
+    FSphere Sphere1;
+    Sphere1.Position = float3(0, -1, 0);
+    Sphere1.Radius = 1;
+    FSphere Sphere2;
+    Sphere2.Position = float3(0, -1, -2.2);
+    Sphere2.Radius = 1;
 
-	if (RaySphereTest(Ray, Sphere0, HitInfo))
-	{
-		HitInfo.Albedo = float3(1, 1, 1);
-		HitInfo.Emissive = float3(1.0f, 0.7f, 0.4f) * 100;
-	}
-	if (RaySphereTest(Ray, Sphere1, HitInfo))
-	{
-		HitInfo.Albedo = float3(1, 0.1, 0.1);
-		HitInfo.Emissive = float3(0, 0, 0);
-	}
-	if (RaySphereTest(Ray, Sphere2, HitInfo))
-	{
-		HitInfo.Albedo = float3(0.1, 1, 0.1);
-		HitInfo.Emissive = float3(0, 0, 0);
-	}
-	if (RaySphereTest(Ray, Sphere3, HitInfo))
-	{
-		HitInfo.Albedo = float3(0.1, 0.1, 1);
-		HitInfo.Emissive = float3(0, 0, 0);
-	}
+    if (RaySphereTest(Ray, LightSphere, HitInfo))
+    {
+        HitInfo.Albedo = float3(0, 0, 0);
+        HitInfo.Emissive = float3(1.0f, 0.7f, 0.4f) * 10;
+    }
+    
+    if (RaySphereTest(Ray, Sphere0, HitInfo))
+    {
+        HitInfo.Albedo = float3(0.9, 0.9, 0.9);
+        HitInfo.Emissive = 0.0;
+    }
+    if (RaySphereTest(Ray, Sphere1, HitInfo))
+    {
+        HitInfo.Albedo = float3(0.1, 0.9, 0.1);
+        HitInfo.Emissive = 0.0;
+    }
+    if (RaySphereTest(Ray, Sphere2, HitInfo))
+    {
+        HitInfo.Albedo = float3(0.9, 0.9, 0.9);
+        HitInfo.Emissive = 0.0;
+    }
 }
 
 float3 Trace(FRay Ray, inout int RngState)
@@ -276,19 +285,24 @@ float3 Trace(FRay Ray, inout int RngState)
 	float3 IncomingLight = 0;
 	float3 RayColor = 1;
 	
-	for (int bounceIndex = 0; bounceIndex < 500; bounceIndex++)
+	for (int bounceIndex = 0; bounceIndex < MAX_BOUNCE; bounceIndex++)
 	{
-		FHitInfo HitInfo = (FHitInfo)0;
-		HitInfo.HitDistance = INFINITE_FLOAT;
-
+	    FHitInfo HitInfo = (FHitInfo)0;
+	    HitInfo.HitDistance = INFINITE_FLOAT;
+	    
 		TestScene(Ray, HitInfo);
-		if (HitInfo.HitDistance == INFINITE_FLOAT) break;
-		
-		Ray.Origin = HitInfo.HitPoint;
-		Ray.Direction = normalize(HitInfo.HitNormal + RandomDirection(RngState));
-		
-		IncomingLight += HitInfo.Emissive * RayColor;
-		RayColor *= HitInfo.Albedo;
+		if (HitInfo.HitDistance == INFINITE_FLOAT)
+		{
+		    float3 SkyColor = (1 + Ray.Direction.y) * float3(0.5, 0.7, 1);
+		    IncomingLight += SkyColor * RayColor;
+		    break;
+		}
+
+	    Ray.Origin = HitInfo.HitPoint;
+	    Ray.Direction = normalize(HitInfo.HitNormal + RandomValue(RngState));
+	    
+	    IncomingLight += HitInfo.Emissive * RayColor;
+	    RayColor *= HitInfo.Albedo;
 	}
 	return IncomingLight;
 }

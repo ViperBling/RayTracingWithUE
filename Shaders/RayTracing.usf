@@ -18,39 +18,65 @@ void RayTracingCS(
 	const uint2 ViewExtent = View.ViewSizeAndInvSize.xy;
 	const uint2 PixelPos = DispatchThreadID.xy;
 	const uint PixelIndex = PixelPos.y * ViewExtent.x + PixelPos.x;
-	const float2 ScreenUV = (DispatchThreadID.xy + 0.5) * View.ViewSizeAndInvSize.zw;
+    const float2 PixelSize = 1.0 / ViewExtent;
+	// const float2 ScreenUV = (DispatchThreadID.xy + 0.5) * View.ViewSizeAndInvSize.zw;
+    float2 ScreenUV = (DispatchThreadID.xy + 0.5) * PixelSize;
 	const float AspectRatio = View.ViewSizeAndInvSize.z / View.ViewSizeAndInvSize.w;
-
 	ResolvedView = ResolveView();
 	
 	uint RngState = PixelIndex + ResolvedView.FrameNumber * 719393;
 
-	float3 ScreenPos = float3(ScreenUV * 2 - 1, 1.0);
-	ScreenPos.y *= -AspectRatio;
-	
-	FRay Ray;
-	float3 TotalIncomingLight = 0;
+    const float FOV = 90.0;
+    float HalfWidth = tan(FOV * 0.5 * PI / 180.0);
+    float HalfHeight = -HalfWidth * AspectRatio;
 
-	float4 LastFrameSceneColor = LastFrameResult.Load(int3(PixelPos, 0));
-	
+    float3 Origin = float3(5, 1, 0);
+    float3 LookAt = float3(0, 0, 0);
+    float3 Up = float3(0, 1, 0);
+
+    float3 Forward = normalize(Origin - LookAt);
+    float3 RightVector = normalize(cross(Forward, Up));
+    float3 UpVector = cross(RightVector, Forward);
+
+    float3 LowerLeft = Origin - HalfWidth * RightVector - HalfHeight * UpVector - Forward;
+    float3 Horizontal = 2 * HalfWidth * RightVector;
+    float3 Vertical = 2 * HalfHeight * UpVector;
+
+    FRay Ray;
+    float3 TotalIncomingLight = 0;
+
+    float4 LastFrameSceneColor = LastFrameResult.Load(int3(PixelPos, 0));
+
+    for (int i = 0; i < SAMPLES_PER_PIXEL; i++)
+    {
+        float3 Direction = LowerLeft - Origin;
+        Direction += Horizontal * (PixelSize.x * RandomValue(RngState) + ScreenUV.x);
+        Direction += Vertical * (PixelSize.y * RandomValue(RngState) + ScreenUV.y);
+
+        Ray.Origin = Origin;
+        Ray.Direction = normalize(Direction);
+
+        TotalIncomingLight += Trace(Ray, RngState);
+    }
+    // TotalIncomingLight /= 2.0;
+
+    
 	// for (int RayIndex = 0; RayIndex < 100; RayIndex++)
 	// {
-		float2 DefocusJitter = RandomPointInCircle(RngState) * 0.5 / ViewExtent.x;
-		// Ray.Origin = float3(0, 0, 0) + float3(1, 0, 0) * DefocusJitter.x + float3(0, 1, 0) * DefocusJitter.y;
-		Ray.Origin = float3(0, 0, 0);
-		// float2 Jitter = RandomPointInCircle(RngState) * 0.5 / ViewExtent.x;
-		Ray.Direction = normalize(ScreenPos - Ray.Origin);
-
-		float3 SkyLight = TextureCubeSampleLevel(SkyDomeCube, SkyDomeCubeSampler, Ray.Direction, 0).rgb;
-	
-		TotalIncomingLight += Trace(Ray, RngState);
+		// float2 DefocusJitter = RandomPointInCircle(RngState) * 0.5 / ViewExtent.x;
+		// // Ray.Origin = float3(0, 0, 0) + float3(1, 0, 0) * DefocusJitter.x + float3(0, 1, 0) * DefocusJitter.y;
+		// Ray.Origin = float3(0, 0, 0);
+		// // float2 Jitter = RandomPointInCircle(RngState) * 0.5 / ViewExtent.x;
+		// Ray.Direction = normalize(ScreenPos - Ray.Origin);
+		//
+		// float3 SkyLight = TextureCubeSampleLevel(SkyDomeCube, SkyDomeCubeSampler, Ray.Direction, 0).rgb;
+		//
+		// TotalIncomingLight += Trace(Ray, RngState);
 	// }
 
 	TotalIncomingLight = lerp(LastFrameSceneColor.rgb, TotalIncomingLight, 1 / float(ResolvedView.FrameCounter + 1.0));
 
-	// OutputUAV[DispatchThreadID.xy] = float4(TotalIncomingLight, 1.0f);
-	OutputUAV[DispatchThreadID.xy] = float4(SkyLight, 1.0f);
-	
+	OutputUAV[DispatchThreadID.xy] = float4(TotalIncomingLight, 1.0f);
 }
 
 void RayTracingOutPS(
