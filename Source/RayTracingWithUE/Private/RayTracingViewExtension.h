@@ -30,5 +30,5 @@ private:
     FIntPoint ViewRectSize;
 	FRDGTextureRef RayTracingResultTexture {};
 	TRefCountPtr<FRHITexture2D> LastFrameResult;
-    TRefCountPtr<IPooledRenderTarget> LastFrameTempRT;
+    FMatrix LastFrameViewMatrix;
 };

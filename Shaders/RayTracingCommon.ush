@@ -9,10 +9,12 @@
 
 struct FMaterial
 {
-    int Type;
     float3 Albedo;
-    float Params;
+    float3 Emissive;
+    float Fuzziness;
+    float RefractiveIndex;
 };
+const FMaterial DefaultMaterial = { float3(0.5, 0.5, 0.5), float3(0, 0, 0), 0, 1.5 };
 
 struct FRay
 {
@@ -244,24 +246,24 @@ void TestScene(FRay Ray, inout FHitInfo HitInfo)
 	// }
 
     FSphere LightSphere;
-    LightSphere.Position = float3(0, 1, 0);
-    LightSphere.Radius = 0.1;
+    LightSphere.Position = float3(0, 0, 100);
+    LightSphere.Radius = 10;
 
     FSphere Sphere0;
-    Sphere0.Position = float3(0, -1, 2.2);
-    Sphere0.Radius = 1;
+    Sphere0.Position = float3(0, 220, -100);
+    Sphere0.Radius = 100;
     FSphere Sphere1;
-    Sphere1.Position = float3(0, -1, 0);
-    Sphere1.Radius = 1;
+    Sphere1.Position = float3(0, 0, -100);
+    Sphere1.Radius = 100;
     FSphere Sphere2;
-    Sphere2.Position = float3(0, -1, -2.2);
-    Sphere2.Radius = 1;
+    Sphere2.Position = float3(0, -220, -100);
+    Sphere2.Radius = 100;
 
-    if (RaySphereTest(Ray, LightSphere, HitInfo))
-    {
-        HitInfo.Albedo = float3(0, 0, 0);
-        HitInfo.Emissive = float3(1.0f, 0.7f, 0.4f) * 10;
-    }
+    // if (RaySphereTest(Ray, LightSphere, HitInfo))
+    // {
+    //     HitInfo.Albedo = float3(0, 0, 0);
+    //     HitInfo.Emissive = float3(1.0f, 0.7f, 0.4f) * 1000;
+    // }
     
     if (RaySphereTest(Ray, Sphere0, HitInfo))
     {
@@ -293,7 +295,7 @@ float3 Trace(FRay Ray, inout int RngState)
 		TestScene(Ray, HitInfo);
 		if (HitInfo.HitDistance == INFINITE_FLOAT)
 		{
-		    float3 SkyColor = (1 + Ray.Direction.y) * float3(0.5, 0.7, 1);
+		    float3 SkyColor = 100 * (1 + Ray.Direction.z) * float3(0.5, 0.7, 1);
 		    IncomingLight += SkyColor * RayColor;
 		    break;
 		}
