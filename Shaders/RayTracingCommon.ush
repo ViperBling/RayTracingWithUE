@@ -100,7 +100,7 @@ FHitInfo HitScene(FRay Ray, FPlane Plane)
     return HitInfo;
 }
 
-FHitInfo HitScene(FRay Ray)
+FHitInfo HitScene(FRay Ray, FSphere Spheres[NUM_SPHERE])
 {
     FHitInfo HitInfo = (FHitInfo)0;
     HitInfo.HitDistance = INFINITE_FLOAT;
@@ -140,7 +140,7 @@ FHitInfo HitScene(FRay Ray)
     return HitInfo;
 }
 
-float3 LightSample(FHitInfo HitInfo)
+float3 LightSample(FHitInfo HitInfo, FSphere Spheres[NUM_SPHERE])
 {
     float3 Budge = 0;
     float MaxI = 0;
@@ -162,7 +162,8 @@ float3 LightSample(FHitInfo HitInfo)
 
 float3 TraceRay(FRay Ray, inout int RngState)
 {
-    InitScene();
+    FSphere Spheres[NUM_SPHERE];
+    InitScene(Spheres);
 
     const float3 SkyBoxColor = (1 + Ray.Direction.z ) * float3(0.5, 0.7, 1.0) * 10;
     
@@ -170,7 +171,7 @@ float3 TraceRay(FRay Ray, inout int RngState)
 
     for (int i = 0; i < MAX_BOUNCE; i++)
     {
-        FHitInfo HitInfo = HitScene(Ray);
+        FHitInfo HitInfo = HitScene(Ray, Spheres);
 
         if (!HitInfo.bHit) return FinalColor * SkyBoxColor;
 
@@ -205,7 +206,7 @@ float3 TraceRay(FRay Ray, inout int RngState)
 
         float3 Reflected = reflect(Ray.Direction, HitInfo.HitNormal);
         float3 Scattered = normalize(HitInfo.HitPosition + RandomDirection(RngState) + HitInfo.HitNormal);
-        float3 LightDir = LightSample(HitInfo);
+        float3 LightDir = LightSample(HitInfo, Spheres);
         float Bias = RandomValue(RngState);
         Scattered = lerp(Scattered, LightDir, Bias);
         Ray.Direction = normalize(lerp(Reflected, Scattered, HitInfo.Material.Fuzziness));

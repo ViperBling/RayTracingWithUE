@@ -110,16 +110,16 @@ FHitMaterial LAMBE(float3 Albedo)
 }
 
 // Scene
-FSphere Spheres[NUM_SPHERE];
-FQuad Quads[NUM_QUAD];
-FTriangle Triangles[NUM_TRIANGLE];
-FPlane Planes[NUM_PLANE];
+// FSphere Spheres[NUM_SPHERE];
+// FQuad Quads[NUM_QUAD];
+// FTriangle Triangles[NUM_TRIANGLE];
+// FPlane Planes[NUM_PLANE];
 
-void InitScene()
+void InitScene(inout FSphere Spheres[NUM_SPHERE])
 {
     Spheres[0].Position = float3(0, 0, 100);
     Spheres[0].Radius = 10;
-    Spheres[0].Material = LIGHT(float3(0, 0, 0), float3(1.0f, 0.7f, 0.4f) * 1000);
+    Spheres[0].Material = LIGHT(float3(1.0f, 0.7f, 0.4f), 1000);
 
     Spheres[1].Position = float3(0, 220, -100);
     Spheres[1].Radius = 100;
