@@ -1,0 +1,139 @@
+﻿#pragma once
+
+#define NUM_SPHERE 5
+#define NUM_QUAD 1
+#define NUM_TRIANGLE 1
+#define NUM_PLANE 1
+
+struct FHitMaterial
+{
+    float3 Albedo;
+    float Emission;
+    float Fuzziness;
+    float RefractiveIndex;
+};
+
+struct FHitInfo
+{
+    bool bHit;
+    float HitDistance;
+    float3 HitPosition;
+    float3 HitNormal;
+    FHitMaterial Material;
+};
+
+struct FRay
+{
+    float3 Origin;
+    float3 Direction;
+};
+
+struct FQuad
+{
+    float3 Q;
+    float3 A;
+    float3 B;
+    FHitMaterial Material;
+};
+
+struct FSphere
+{
+    float3 Position;
+    float Radius;
+    FHitMaterial Material;
+};
+
+struct FTriangle
+{
+    float3 A;
+    float3 B;
+    float3 C;
+    FHitMaterial Material;
+};
+
+struct FPlane
+{
+    float3 Normal;
+    float3 P;
+    FHitMaterial Material;
+};
+
+// Albedo, Emission, Fuzziness, RefractiveIndex
+FHitMaterial LIGHT(float3 Albedo, float Emission)
+{
+    FHitMaterial Material;
+    Material.Albedo = Albedo;
+    Material.Emission = Emission;
+    Material.Fuzziness = 0;
+    Material.RefractiveIndex = -1;
+    return Material;
+}
+
+FHitMaterial MATTE(float3 Albedo)
+{
+    FHitMaterial Material;
+    Material.Albedo = Albedo;
+    Material.Emission = -1;
+    Material.Fuzziness = 1;
+    Material.RefractiveIndex = -1;
+    return Material;
+}
+
+FHitMaterial METAL(float3 Albedo)
+{
+    FHitMaterial Material;
+    Material.Albedo = Albedo;
+    Material.Emission = -1;
+    Material.Fuzziness = 0;
+    Material.RefractiveIndex = -1;
+    return Material;
+}
+
+FHitMaterial GLASS(float3 Albedo, float RefractiveIndex)
+{
+    FHitMaterial Material;
+    Material.Albedo = Albedo;
+    Material.Emission = -1;
+    Material.Fuzziness = 0;
+    Material.RefractiveIndex = RefractiveIndex;
+    return Material;
+}
+
+FHitMaterial LAMBE(float3 Albedo)
+{
+    FHitMaterial Material;
+    Material.Albedo = Albedo;
+    Material.Emission = -1;
+    Material.Fuzziness = 0;
+    Material.RefractiveIndex = -1;
+    return Material;
+}
+
+// Scene
+FSphere Spheres[NUM_SPHERE];
+FQuad Quads[NUM_QUAD];
+FTriangle Triangles[NUM_TRIANGLE];
+FPlane Planes[NUM_PLANE];
+
+void InitScene()
+{
+    Spheres[0].Position = float3(0, 0, 100);
+    Spheres[0].Radius = 10;
+    Spheres[0].Material = LIGHT(float3(0, 0, 0), float3(1.0f, 0.7f, 0.4f) * 1000);
+
+    Spheres[1].Position = float3(0, 220, -100);
+    Spheres[1].Radius = 100;
+    Spheres[1].Material = MATTE(float3(0.9, 0.1, 0.1));
+
+    Spheres[2].Position = float3(0, 0, -100);
+    Spheres[2].Radius = 100;
+    Spheres[2].Material = METAL(float3(0.1, 0.9, 0.1));
+
+    Spheres[3].Position = float3(0, -220, -100);
+    Spheres[3].Radius = 100;
+    Spheres[3].Material = GLASS(float3(1, 1, 1), 1.5);
+
+    Spheres[4].Position = float3(220, 0, -100);
+    Spheres[4].Radius = 100;
+    Spheres[4].Material = LAMBE(float3(0.1, 0.1, 0.9));
+}

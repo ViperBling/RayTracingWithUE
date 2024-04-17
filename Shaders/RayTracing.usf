@@ -59,23 +59,9 @@ void RayTracingCS(
         Ray.Origin = Origin;
         Ray.Direction = normalize(Direction);
 
-        TotalIncomingLight += Trace(Ray, RngState);
+        TotalIncomingLight += TraceRay(Ray, RngState);
     }
-    // TotalIncomingLight /= 2.0;
-
-    
-	// for (int RayIndex = 0; RayIndex < 100; RayIndex++)
-	// {
-		// float2 DefocusJitter = RandomPointInCircle(RngState) * 0.5 / ViewExtent.x;
-		// // Ray.Origin = float3(0, 0, 0) + float3(1, 0, 0) * DefocusJitter.x + float3(0, 1, 0) * DefocusJitter.y;
-		// Ray.Origin = float3(0, 0, 0);
-		// // float2 Jitter = RandomPointInCircle(RngState) * 0.5 / ViewExtent.x;
-		// Ray.Direction = normalize(ScreenPos - Ray.Origin);
-		//
-		// float3 SkyLight = TextureCubeSampleLevel(SkyDomeCube, SkyDomeCubeSampler, Ray.Direction, 0).rgb;
-		//
-		// TotalIncomingLight += Trace(Ray, RngState);
-	// }
+    TotalIncomingLight /= SAMPLES_PER_PIXEL * 1.0;
 
 	TotalIncomingLight = lerp(LastFrameSceneColor.rgb, TotalIncomingLight, 1 / float(ResolvedView.FrameCounter + 1.0));
 
