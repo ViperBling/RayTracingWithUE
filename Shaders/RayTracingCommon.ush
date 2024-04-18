@@ -3,7 +3,7 @@
 #include "RayTracingScene.ush"
 
 #define SAMPLES_PER_PIXEL 1
-#define MAX_BOUNCE 50
+#define MAX_BOUNCE 100
 
 // PCG (permuted congruential generator). Thanks to:
 // www.pcg-random.org and www.shadertoy.com/view/XlGcRh
@@ -70,14 +70,14 @@ FHitInfo HitScene(FRay Ray, FSphere Sphere)
     float c = dot(OffsetRayOrigin, OffsetRayOrigin) - Sphere.Radius * Sphere.Radius;
     float Discriminant = b * b - 4.0 * a * c;
 
-    if (Discriminant < 0.0) return NoHit;
+    if (Discriminant < 0.0001) return NoHit;
 
-    float t = (-b - sqrt(Discriminant)) / a;
-    if (t < 0.0)
+    float t = (-b - sqrt(Discriminant)) / 2.0 * a;
+    if (t < 0.1)
     {
-        t = (-b + sqrt(Discriminant)) / a;
+        t = (-b + sqrt(Discriminant)) / 2.0 * a;
     }
-    if (t < 0.0) return NoHit;
+    if (t < 0.1) return NoHit;
     
     HitInfo.bHit = true;
     HitInfo.HitDistance = t;
@@ -182,25 +182,25 @@ float3 TraceRay(FRay Ray, inout int RngState)
 
         Ray.Origin = HitInfo.HitPosition;
 
-        if (HitInfo.Material.RefractiveIndex > 0)
-        {
-            bool bIsInside = dot(Ray.Direction, HitInfo.HitNormal) > 0;
-            float RefractRate = bIsInside ? 1.0 / HitInfo.Material.RefractiveIndex : HitInfo.Material.RefractiveIndex;
-
-            float CosTheta = dot(-Ray.Direction, HitInfo.HitNormal);
-            float SinTheta = sqrt(1 - CosTheta * CosTheta);
-            bool bCantRefract = RefractRate * SinTheta > 1.0;
-
-            if (bCantRefract)
-            {
-                Ray.Direction = reflect(Ray.Direction, HitInfo.HitNormal);
-            }
-            else
-            {
-                Ray.Direction = refract(Ray.Direction, HitInfo.HitNormal, RefractRate);
-            }
-            continue;
-        }
+        // if (HitInfo.Material.RefractiveIndex > 0)
+        // {
+        //     bool bIsInside = dot(Ray.Direction, HitInfo.HitNormal) > 0;
+        //     float RefractRate = bIsInside ? 1.0 / HitInfo.Material.RefractiveIndex : HitInfo.Material.RefractiveIndex;
+        //
+        //     float CosTheta = dot(-Ray.Direction, HitInfo.HitNormal);
+        //     float SinTheta = sqrt(1 - CosTheta * CosTheta);
+        //     bool bCantRefract = RefractRate * SinTheta > 1.0;
+        //
+        //     if (bCantRefract)
+        //     {
+        //         Ray.Direction = reflect(Ray.Direction, HitInfo.HitNormal);
+        //     }
+        //     else
+        //     {
+        //         Ray.Direction = refract(Ray.Direction, HitInfo.HitNormal, RefractRate);
+        //     }
+        //     continue;
+        // }
 
         FinalColor *= HitInfo.Material.Albedo;
 
