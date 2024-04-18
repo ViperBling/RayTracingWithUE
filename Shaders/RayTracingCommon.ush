@@ -3,7 +3,7 @@
 #include "RayTracingScene.ush"
 
 #define SAMPLES_PER_PIXEL 1
-#define MAX_BOUNCE 100
+#define MAX_BOUNCE 2
 
 // PCG (permuted congruential generator). Thanks to:
 // www.pcg-random.org and www.shadertoy.com/view/XlGcRh
@@ -182,6 +182,15 @@ float3 TraceRay(FRay Ray, inout int RngState)
 
         Ray.Origin = HitInfo.HitPosition;
 
+        if (HitInfo.Material.Type == MAT_DIFFUSE)
+        {
+            float3 Direction = HitInfo.HitPosition + RandomDirection(RngState) + HitInfo.HitNormal;
+            Ray.Origin = HitInfo.HitPosition;
+            Ray.Direction = normalize(Direction - HitInfo.HitPosition);
+            // float3 Scattered = HitInfo.HitPosition + HitInfo.HitDistance * normalize(Direction - HitInfo.HitPosition);
+            FinalColor += HitInfo.Material.Albedo;
+        }
+
         // if (HitInfo.Material.RefractiveIndex > 0)
         // {
         //     bool bIsInside = dot(Ray.Direction, HitInfo.HitNormal) > 0;
@@ -201,15 +210,15 @@ float3 TraceRay(FRay Ray, inout int RngState)
         //     }
         //     continue;
         // }
-
-        FinalColor *= HitInfo.Material.Albedo;
-
-        float3 Reflected = reflect(Ray.Direction, HitInfo.HitNormal);
-        float3 Scattered = normalize(HitInfo.HitPosition + RandomDirection(RngState) + HitInfo.HitNormal);
-        float3 LightDir = LightSample(HitInfo, Spheres);
-        float Bias = RandomValue(RngState);
-        Scattered = lerp(Scattered, LightDir, Bias);
-        Ray.Direction = normalize(lerp(Reflected, Scattered, HitInfo.Material.Fuzziness));
+        //
+        // FinalColor *= HitInfo.Material.Albedo;
+        //
+        // float3 Reflected = reflect(Ray.Direction, HitInfo.HitNormal);
+        // float3 Scattered = normalize(HitInfo.HitPosition + RandomDirection(RngState) + Reflected);
+        // float3 LightDir = LightSample(HitInfo, Spheres);
+        // float Bias = RandomValue(RngState);
+        // Scattered = lerp(Scattered, LightDir, Bias);
+        // Ray.Direction = normalize(lerp(Reflected, Scattered, HitInfo.Material.Fuzziness));
     }
     return FinalColor;
 }

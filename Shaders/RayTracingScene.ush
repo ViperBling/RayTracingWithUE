@@ -1,12 +1,18 @@
 ﻿#pragma once
 
-#define NUM_SPHERE 3
+#define NUM_SPHERE 2
 #define NUM_QUAD 1
 #define NUM_TRIANGLE 1
 #define NUM_PLANE 1
 
+#define MAT_LIGHT 0
+#define MAT_DIFFUSE 1
+#define MAT_METAL 2
+#define MAT_DIALECTRIC 3
+
 struct FHitMaterial
 {
+    int Type;
     float3 Albedo;
     float Emission;
     float Fuzziness;
@@ -62,6 +68,7 @@ struct FPlane
 FHitMaterial LIGHT(float3 Albedo, float Emission)
 {
     FHitMaterial Material;
+    Material.Type = MAT_LIGHT;
     Material.Albedo = Albedo;
     Material.Emission = Emission;
     Material.Fuzziness = 0;
@@ -69,9 +76,10 @@ FHitMaterial LIGHT(float3 Albedo, float Emission)
     return Material;
 }
 
-FHitMaterial MATTE(float3 Albedo)
+FHitMaterial LAMBERT(float3 Albedo)
 {
     FHitMaterial Material;
+    Material.Type = MAT_DIFFUSE;
     Material.Albedo = Albedo;
     Material.Emission = -1;
     Material.Fuzziness = 1;
@@ -82,6 +90,7 @@ FHitMaterial MATTE(float3 Albedo)
 FHitMaterial METAL(float3 Albedo)
 {
     FHitMaterial Material;
+    Material.Type = MAT_METAL;
     Material.Albedo = Albedo;
     Material.Emission = -1;
     Material.Fuzziness = 0;
@@ -92,6 +101,7 @@ FHitMaterial METAL(float3 Albedo)
 FHitMaterial GLASS(float3 Albedo, float RefractiveIndex)
 {
     FHitMaterial Material;
+    Material.Type = MAT_DIALECTRIC;
     Material.Albedo = Albedo;
     Material.Emission = -1;
     Material.Fuzziness = 0;
@@ -107,17 +117,17 @@ FHitMaterial GLASS(float3 Albedo, float RefractiveIndex)
 
 void InitScene(inout FSphere Spheres[NUM_SPHERE])
 {
-    Spheres[0].Position = float3(0, 0, 200);
+    Spheres[0].Position = float3(0, 0, 400);
     Spheres[0].Radius = 10;
-    Spheres[0].Material = LIGHT(2 * float3(1.0f, 0.7f, 0.4f), 5);
+    Spheres[0].Material = LIGHT(2 * float3(1.0f, 0.7f, 0.4f), 1);
 
     Spheres[1].Position = float3(0, 220, 100);
     Spheres[1].Radius = 100;
-    Spheres[1].Material = METAL(float3(0.9, 0.1, 0.1));
-    
-    Spheres[2].Position = float3(0, 0, 100);
-    Spheres[2].Radius = 100;
-    Spheres[2].Material = METAL(float3(0.1, 0.9, 0.1));
+    Spheres[1].Material = LAMBERT(float3(0.9, 0.9, 0.9));
+    //
+    // Spheres[2].Position = float3(0, 0, 100);
+    // Spheres[2].Radius = 100;
+    // Spheres[2].Material = LAMBERT(float3(0.1, 0.9, 0.1));
 
     // Spheres[3].Position = float3(0, -220, -100);
     // Spheres[3].Radius = 100;
