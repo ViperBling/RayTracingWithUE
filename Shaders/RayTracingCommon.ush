@@ -3,7 +3,7 @@
 #include "RayTracingScene.ush"
 
 #define SAMPLES_PER_PIXEL 1
-#define MAX_BOUNCE 2
+#define MAX_BOUNCE 100
 
 // PCG (permuted congruential generator). Thanks to:
 // www.pcg-random.org and www.shadertoy.com/view/XlGcRh
@@ -160,12 +160,12 @@ float3 LightSample(FHitInfo HitInfo, FSphere Spheres[NUM_SPHERE])
     return Budge * MaxI * 2.0;
 }
 
-float3 TraceRay(FRay Ray, inout int RngState)
+float3 TraceRay(FRay Ray, float3 SkyColor, inout int RngState)
 {
     FSphere Spheres[NUM_SPHERE];
     InitScene(Spheres);
 
-    const float3 SkyBoxColor = (1 + Ray.Direction.z ) * float3(0.5, 0.7, 1.0) * 10;
+    SkyColor = (1 + Ray.Direction.z ) * float3(0.5, 0.7, 1.0) * 2;
     
 	float3 FinalColor = 1;
 
@@ -173,22 +173,19 @@ float3 TraceRay(FRay Ray, inout int RngState)
     {
         FHitInfo HitInfo = HitScene(Ray, Spheres);
 
-        if (!HitInfo.bHit) return FinalColor * SkyBoxColor;
+        if (!HitInfo.bHit) return FinalColor * SkyColor;
 
-        if (HitInfo.Material.Emission > 0)
-        {
-            return HitInfo.Material.Emission * HitInfo.Material.Albedo;
-        }
-
-        Ray.Origin = HitInfo.HitPosition;
+        // if (HitInfo.Material.Emission > 0)
+        // {
+        //     return HitInfo.Material.Emission * HitInfo.Material.Albedo;
+        // }
 
         if (HitInfo.Material.Type == MAT_DIFFUSE)
         {
             float3 Direction = HitInfo.HitPosition + RandomDirection(RngState) + HitInfo.HitNormal;
             Ray.Origin = HitInfo.HitPosition;
             Ray.Direction = normalize(Direction - HitInfo.HitPosition);
-            // float3 Scattered = HitInfo.HitPosition + HitInfo.HitDistance * normalize(Direction - HitInfo.HitPosition);
-            FinalColor += HitInfo.Material.Albedo;
+            FinalColor *= HitInfo.Material.Albedo;
         }
 
         // if (HitInfo.Material.RefractiveIndex > 0)

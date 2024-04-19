@@ -117,13 +117,13 @@ FHitMaterial GLASS(float3 Albedo, float RefractiveIndex)
 
 void InitScene(inout FSphere Spheres[NUM_SPHERE])
 {
-    Spheres[0].Position = float3(0, 0, 400);
-    Spheres[0].Radius = 10;
-    Spheres[0].Material = LIGHT(2 * float3(1.0f, 0.7f, 0.4f), 1);
+    Spheres[0].Position = float3(0, 0, -100000);
+    Spheres[0].Radius = 100000;
+    Spheres[0].Material = LAMBERT(float3(0.9, 0.9, 0.9));
 
     Spheres[1].Position = float3(0, 220, 100);
     Spheres[1].Radius = 100;
-    Spheres[1].Material = LAMBERT(float3(0.9, 0.9, 0.9));
+    Spheres[1].Material = LAMBERT(float3(0.9, 0.1, 0.9));
     //
     // Spheres[2].Position = float3(0, 0, 100);
     // Spheres[2].Radius = 100;
