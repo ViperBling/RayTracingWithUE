@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#define NUM_SPHERE 2
+#define NUM_SPHERE 4
 #define NUM_QUAD 1
 #define NUM_TRIANGLE 1
 #define NUM_PLANE 1
@@ -87,13 +87,13 @@ FHitMaterial LAMBERT(float3 Albedo)
     return Material;
 }
 
-FHitMaterial METAL(float3 Albedo)
+FHitMaterial METAL(float3 Albedo, float Fuzziness)
 {
     FHitMaterial Material;
     Material.Type = MAT_METAL;
     Material.Albedo = Albedo;
     Material.Emission = -1;
-    Material.Fuzziness = 0;
+    Material.Fuzziness = Fuzziness;
     Material.RefractiveIndex = -1;
     return Material;
 }
@@ -121,15 +121,15 @@ void InitScene(inout FSphere Spheres[NUM_SPHERE])
     Spheres[0].Radius = 100000;
     Spheres[0].Material = LAMBERT(float3(0.9, 0.9, 0.9));
 
-    Spheres[1].Position = float3(0, 220, 100);
+    Spheres[1].Position = float3(0, 0, 100);
     Spheres[1].Radius = 100;
     Spheres[1].Material = LAMBERT(float3(0.9, 0.1, 0.9));
-    //
-    // Spheres[2].Position = float3(0, 0, 100);
-    // Spheres[2].Radius = 100;
-    // Spheres[2].Material = LAMBERT(float3(0.1, 0.9, 0.1));
+    
+    Spheres[2].Position = float3(0, 220, 100);
+    Spheres[2].Radius = 100;
+    Spheres[2].Material = METAL(float3(0.9, 0.9, 0.1), 0.0);
 
-    // Spheres[3].Position = float3(0, -220, -100);
-    // Spheres[3].Radius = 100;
-    // Spheres[3].Material = GLASS(float3(1, 1, 1), 1.5);
+    Spheres[3].Position = float3(0, -220, 100);
+    Spheres[3].Radius = 100;
+    Spheres[3].Material = GLASS(float3(1, 1, 1), 1.3);
 }

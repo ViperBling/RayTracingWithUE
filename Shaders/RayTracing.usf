@@ -59,9 +59,7 @@ void RayTracingCS(
         Ray.Origin = Origin;
         Ray.Direction = normalize(Direction);
 
-        float3 SkyColor = TextureCubeSample(SkyDomeCube, SkyDomeCubeSampler, Ray.Direction).rgb;
-
-        TotalIncomingLight += TraceRay(Ray, SkyColor, RngState);
+        TotalIncomingLight += TraceRay(Ray, RngState, SkyDomeCube, SkyDomeCubeSampler);
     }
     TotalIncomingLight /= SAMPLES_PER_PIXEL * 1.0;
 

@@ -2,7 +2,7 @@
 
 #include "RayTracingScene.ush"
 
-#define SAMPLES_PER_PIXEL 1
+#define SAMPLES_PER_PIXEL 50
 #define MAX_BOUNCE 100
 
 // PCG (permuted congruential generator). Thanks to:
@@ -60,7 +60,6 @@ FHitInfo HitScene(FRay Ray, FQuad Quad)
 
 FHitInfo HitScene(FRay Ray, FSphere Sphere)
 {
-    FHitInfo NoHit = (FHitInfo)0;
     FHitInfo HitInfo = (FHitInfo)0;
     
     float3 OffsetRayOrigin = Ray.Origin - Sphere.Position;
@@ -70,20 +69,18 @@ FHitInfo HitScene(FRay Ray, FSphere Sphere)
     float c = dot(OffsetRayOrigin, OffsetRayOrigin) - Sphere.Radius * Sphere.Radius;
     float Discriminant = b * b - 4.0 * a * c;
 
-    if (Discriminant < 0.0001) return NoHit;
-
-    float t = (-b - sqrt(Discriminant)) / 2.0 * a;
-    if (t < 0.1)
+    if (Discriminant >= 0)
     {
-        t = (-b + sqrt(Discriminant)) / 2.0 * a;
+	    float Dist = (-b - sqrt(Discriminant)) / (2.0 * a);
+    	if (Dist >= 0)
+    	{
+    		HitInfo.bHit = true;
+    		HitInfo.HitDistance = Dist;
+    		HitInfo.HitPosition = Ray.Origin + Ray.Direction * Dist;
+    		HitInfo.HitNormal = normalize(HitInfo.HitPosition - Sphere.Position);
+    		HitInfo.Material = Sphere.Material;
+    	}
     }
-    if (t < 0.1) return NoHit;
-    
-    HitInfo.bHit = true;
-    HitInfo.HitDistance = t;
-    HitInfo.HitPosition = Ray.Origin + t * Ray.Direction;
-    HitInfo.HitNormal = normalize(HitInfo.HitPosition - Sphere.Position);
-    HitInfo.Material = Sphere.Material;
     
     return HitInfo;
 }
@@ -103,6 +100,7 @@ FHitInfo HitScene(FRay Ray, FPlane Plane)
 FHitInfo HitScene(FRay Ray, FSphere Spheres[NUM_SPHERE])
 {
     FHitInfo HitInfo = (FHitInfo)0;
+    HitInfo.bHit = false;
     HitInfo.HitDistance = INFINITE_FLOAT;
 
     for (int i = 0; i < NUM_SPHERE; i++)
@@ -140,6 +138,13 @@ FHitInfo HitScene(FRay Ray, FSphere Spheres[NUM_SPHERE])
     return HitInfo;
 }
 
+float Schlick(float Cosine, float IOR)
+{
+	float R0 = (1.0 - IOR) / (1.0 + IOR);
+	R0 = R0 * R0;
+	return R0 + (1.0 - R0) * pow((1.0 - Cosine), 5);
+}
+
 float3 LightSample(FHitInfo HitInfo, FSphere Spheres[NUM_SPHERE])
 {
     float3 Budge = 0;
@@ -160,62 +165,103 @@ float3 LightSample(FHitInfo HitInfo, FSphere Spheres[NUM_SPHERE])
     return Budge * MaxI * 2.0;
 }
 
-float3 TraceRay(FRay Ray, float3 SkyColor, inout int RngState)
+float3 TraceRay(FRay Ray, inout int RngState, TextureCube SkyCube, SamplerState CubeSampler)
 {
     FSphere Spheres[NUM_SPHERE];
     InitScene(Spheres);
 
-    SkyColor = (1 + Ray.Direction.z ) * float3(0.5, 0.7, 1.0) * 2;
-    
+    // SkyColor = 0.1 * (1 + Ray.Direction.z ) * float3(0.5, 0.7, 1.0);
+
+	float3 IncomingLight = 0;
+	float3 RayColor = 1;
 	float3 FinalColor = 1;
 
     for (int i = 0; i < MAX_BOUNCE; i++)
     {
         FHitInfo HitInfo = HitScene(Ray, Spheres);
 
-        if (!HitInfo.bHit) return FinalColor * SkyColor;
-
-        // if (HitInfo.Material.Emission > 0)
-        // {
-        //     return HitInfo.Material.Emission * HitInfo.Material.Albedo;
-        // }
-
-        if (HitInfo.Material.Type == MAT_DIFFUSE)
+        if (HitInfo.bHit)
         {
-            float3 Direction = HitInfo.HitPosition + RandomDirection(RngState) + HitInfo.HitNormal;
-            Ray.Origin = HitInfo.HitPosition;
-            Ray.Direction = normalize(Direction - HitInfo.HitPosition);
-            FinalColor *= HitInfo.Material.Albedo;
-        }
+			// FHitMaterial Material = HitInfo.Material;
+			//
+			// Ray.Origin = HitInfo.HitPosition;
+			// float3 DiffuseDirection = HitInfo.HitNormal + RandomDirection(RngState);
+			// Ray.Direction = normalize(DiffuseDirection);
+			//
+			// RayColor *= Material.Albedo;
+			//
+			// float P = max(RayColor.r, max(RayColor.g, RayColor.b));
+			// if (RandomValue(RngState) >= P)
+			// {
+			// 	break;
+			// }
+			// RayColor *= 1.0 / P;
+        	if (HitInfo.Material.Type == MAT_DIFFUSE)
+        	{
+        		Ray.Origin = HitInfo.HitPosition;
+        		Ray.Direction = HitInfo.HitNormal + RandomDirection(RngState);
+        		FinalColor *= HitInfo.Material.Albedo;
+        	}
+        	if (HitInfo.Material.Type == MAT_METAL)
+        	{
+        		float3 Reflected = reflect(Ray.Direction, HitInfo.HitNormal);
+        		Ray.Origin = HitInfo.HitPosition;
+        		Ray.Direction = Reflected + HitInfo.Material.Fuzziness * RandomDirection(RngState);
+        		FinalColor *= HitInfo.Material.Albedo;
+        	}
+        	if (HitInfo.Material.Type == MAT_DIALECTRIC)
+        	{
+        		float3 Reflected = reflect(Ray.Direction, HitInfo.HitNormal);
+        		FinalColor = 1;
+        		float3 Refracted = 0;
+        		float3 OutNormal = 0;
+        		float ReflectProb = 0;
+        		float Cosine = 0;
+        		float Eta;
 
-        // if (HitInfo.Material.RefractiveIndex > 0)
-        // {
-        //     bool bIsInside = dot(Ray.Direction, HitInfo.HitNormal) > 0;
-        //     float RefractRate = bIsInside ? 1.0 / HitInfo.Material.RefractiveIndex : HitInfo.Material.RefractiveIndex;
-        //
-        //     float CosTheta = dot(-Ray.Direction, HitInfo.HitNormal);
-        //     float SinTheta = sqrt(1 - CosTheta * CosTheta);
-        //     bool bCantRefract = RefractRate * SinTheta > 1.0;
-        //
-        //     if (bCantRefract)
-        //     {
-        //         Ray.Direction = reflect(Ray.Direction, HitInfo.HitNormal);
-        //     }
-        //     else
-        //     {
-        //         Ray.Direction = refract(Ray.Direction, HitInfo.HitNormal, RefractRate);
-        //     }
-        //     continue;
-        // }
-        //
-        // FinalColor *= HitInfo.Material.Albedo;
-        //
-        // float3 Reflected = reflect(Ray.Direction, HitInfo.HitNormal);
-        // float3 Scattered = normalize(HitInfo.HitPosition + RandomDirection(RngState) + Reflected);
-        // float3 LightDir = LightSample(HitInfo, Spheres);
-        // float Bias = RandomValue(RngState);
-        // Scattered = lerp(Scattered, LightDir, Bias);
-        // Ray.Direction = normalize(lerp(Reflected, Scattered, HitInfo.Material.Fuzziness));
+        		float Dt = dot(Ray.Direction, HitInfo.HitNormal);
+
+        		if (Dt > 0.0)
+        		{
+        			OutNormal = -HitInfo.HitNormal;
+        			Eta = HitInfo.Material.RefractiveIndex;
+        			Cosine = Eta * Dt / length(Ray.Direction);
+        		}
+        		else
+        		{
+        			OutNormal = HitInfo.HitNormal;
+        			Eta = 1.0 / HitInfo.Material.RefractiveIndex;
+        			Cosine = -Dt / length(Ray.Direction);
+        		}
+        		Refracted = refract(Ray.Direction, OutNormal, Eta);
+        		if (all(Refracted))
+				{
+					ReflectProb = Schlick(Cosine, Eta);
+				}
+				else
+				{
+					ReflectProb = 1.0;
+				}
+        		if (RandomValue(RngState) < ReflectProb)
+				{
+					Ray.Origin = HitInfo.HitPosition;
+					Ray.Direction = Reflected;
+				}
+				else
+				{
+					Ray.Origin = HitInfo.HitPosition;
+					Ray.Direction = Refracted;
+				}
+
+        		FinalColor *= HitInfo.Material.Albedo;
+        	}
+        }
+		else
+		{
+			float3 SkyColor = TextureCubeSample(SkyCube, CubeSampler, Ray.Direction).rgb;
+			// IncomingLight += SkyColor * RayColor;
+			return FinalColor * SkyColor;
+		}
     }
     return FinalColor;
 }
