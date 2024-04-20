@@ -56,16 +56,21 @@ void RayTracingCS(
         Direction += Horizontal * (PixelSize.x * RandomValue(RngState) + ScreenUV.x);
         Direction += Vertical * (PixelSize.y * RandomValue(RngState) + ScreenUV.y);
 
-        Ray.Origin = Origin;
+    	float2 DefocusJitter = RandomPointInCircle(RngState) * 0.5 / PixelPos.x;
+        Ray.Origin = Origin + RightVector * DefocusJitter.x + UpVector * DefocusJitter.y;
+    	
         Ray.Direction = normalize(Direction);
 
         TotalIncomingLight += TraceRay(Ray, RngState, SkyDomeCube, SkyDomeCubeSampler);
     }
     TotalIncomingLight /= SAMPLES_PER_PIXEL * 1.0;
 
-	TotalIncomingLight = lerp(LastFrameSceneColor.rgb, TotalIncomingLight, 1 / float(ResolvedView.FrameCounter + 1.0));
+	float FrameCounter = ResolvedView.FrameNumber + 1.0;
+	TotalIncomingLight = saturate(lerp(LastFrameSceneColor.rgb, TotalIncomingLight, 1.0 / FrameCounter));
 
-	OutputUAV[DispatchThreadID.xy] = float4(TotalIncomingLight, 1.0f);
+	// TotalIncomingLight += LastFrameSceneColor.rgb;
+	
+	OutputUAV[DispatchThreadID.xy] = float4(TotalIncomingLight, 1.0);
 }
 
 void RayTracingOutPS(
@@ -74,5 +79,6 @@ void RayTracingOutPS(
 	)
 {
     float4 CurrentFrameSceneColor = InRayTracingResult.Load(int3(SvPosition.xy, 0));
+	// CurrentFrameSceneColor /= CurrentFrameSceneColor.w;
 	OutValue = CurrentFrameSceneColor;
 }

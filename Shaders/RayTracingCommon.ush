@@ -182,20 +182,11 @@ float3 TraceRay(FRay Ray, inout int RngState, TextureCube SkyCube, SamplerState 
 
         if (HitInfo.bHit)
         {
-			// FHitMaterial Material = HitInfo.Material;
-			//
-			// Ray.Origin = HitInfo.HitPosition;
-			// float3 DiffuseDirection = HitInfo.HitNormal + RandomDirection(RngState);
-			// Ray.Direction = normalize(DiffuseDirection);
-			//
-			// RayColor *= Material.Albedo;
-			//
-			// float P = max(RayColor.r, max(RayColor.g, RayColor.b));
-			// if (RandomValue(RngState) >= P)
-			// {
-			// 	break;
-			// }
-			// RayColor *= 1.0 / P;
+        	if (HitInfo.Material.Type == MAT_LIGHT)
+        	{
+        		FinalColor *= HitInfo.Material.Emission * HitInfo.Material.Albedo;
+        		break;
+        	}
         	if (HitInfo.Material.Type == MAT_DIFFUSE)
         	{
         		Ray.Origin = HitInfo.HitPosition;
@@ -204,9 +195,10 @@ float3 TraceRay(FRay Ray, inout int RngState, TextureCube SkyCube, SamplerState 
         	}
         	if (HitInfo.Material.Type == MAT_METAL)
         	{
+        		float3 DiffuseDir = normalize(HitInfo.HitNormal + RandomDirection(RngState));
         		float3 Reflected = reflect(Ray.Direction, HitInfo.HitNormal);
         		Ray.Origin = HitInfo.HitPosition;
-        		Ray.Direction = Reflected + HitInfo.Material.Fuzziness * RandomDirection(RngState);
+        		Ray.Direction = normalize(lerp(DiffuseDir, Reflected, HitInfo.Material.Fuzziness));
         		FinalColor *= HitInfo.Material.Albedo;
         	}
         	if (HitInfo.Material.Type == MAT_DIALECTRIC)
@@ -255,12 +247,18 @@ float3 TraceRay(FRay Ray, inout int RngState, TextureCube SkyCube, SamplerState 
 
         		FinalColor *= HitInfo.Material.Albedo;
         	}
+        	float P = max(FinalColor.x, max(FinalColor.y, FinalColor.z));
+        	if (RandomValue(RngState) >= P)
+			{
+				break;
+			}
+        	FinalColor *= 1.0f / P; 
         }
 		else
 		{
 			float3 SkyColor = TextureCubeSample(SkyCube, CubeSampler, Ray.Direction).rgb;
-			// IncomingLight += SkyColor * RayColor;
-			return FinalColor * SkyColor;
+			FinalColor *= SkyColor;
+			break;
 		}
     }
     return FinalColor;
