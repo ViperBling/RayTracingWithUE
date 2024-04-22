@@ -17,6 +17,7 @@ public:
 		SHADER_PARAMETER_STRUCT_REF(FViewUniformShaderParameters, View)
 		SHADER_PARAMETER_TEXTURE(TextureCube, SkyDomeCube)
 		SHADER_PARAMETER_SAMPLER(SamplerState, SkyDomeCubeSampler)
+        SHADER_PARAMETER(uint32, FrameCounter)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, LastFrameResult)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, OutputUAV)
 	END_SHADER_PARAMETER_STRUCT()

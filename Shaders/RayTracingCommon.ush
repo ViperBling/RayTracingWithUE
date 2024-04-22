@@ -2,7 +2,7 @@
 
 #include "RayTracingScene.ush"
 
-#define SAMPLES_PER_PIXEL 50
+#define SAMPLES_PER_PIXEL 5
 #define MAX_BOUNCE 100
 
 // PCG (permuted congruential generator). Thanks to:
@@ -198,7 +198,7 @@ float3 TraceRay(FRay Ray, inout int RngState, TextureCube SkyCube, SamplerState 
         		float3 DiffuseDir = normalize(HitInfo.HitNormal + RandomDirection(RngState));
         		float3 Reflected = reflect(Ray.Direction, HitInfo.HitNormal);
         		Ray.Origin = HitInfo.HitPosition;
-        		Ray.Direction = normalize(lerp(DiffuseDir, Reflected, HitInfo.Material.Fuzziness));
+        		Ray.Direction = normalize(lerp(DiffuseDir, Reflected, HitInfo.Material.Roughness));
         		FinalColor *= HitInfo.Material.Albedo;
         	}
         	if (HitInfo.Material.Type == MAT_DIALECTRIC)
@@ -247,16 +247,11 @@ float3 TraceRay(FRay Ray, inout int RngState, TextureCube SkyCube, SamplerState 
 
         		FinalColor *= HitInfo.Material.Albedo;
         	}
-        	float P = max(FinalColor.x, max(FinalColor.y, FinalColor.z));
-        	if (RandomValue(RngState) >= P)
-			{
-				break;
-			}
-        	FinalColor *= 1.0f / P; 
         }
 		else
 		{
 			float3 SkyColor = TextureCubeSample(SkyCube, CubeSampler, Ray.Direction).rgb;
+		    // float3 SkyColor = 0.5 * (1 + Ray.Direction.z ) * float3(0.5, 0.7, 1.0);
 			FinalColor *= SkyColor;
 			break;
 		}

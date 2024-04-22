@@ -7,6 +7,8 @@ RWTexture2D<float4> OutputUAV;
 TextureCube SkyDomeCube;
 SamplerState SkyDomeCubeSampler;
 
+uint FrameCounter;
+
 Texture2D LastFrameResult;
 Texture2D InRayTracingResult;
 
@@ -53,8 +55,8 @@ void RayTracingCS(
     for (int i = 0; i < SAMPLES_PER_PIXEL; i++)
     {
         float3 Direction = LowerLeft - Origin;
-        Direction += Horizontal * (PixelSize.x * RandomValue(RngState) + ScreenUV.x);
-        Direction += Vertical * (PixelSize.y * RandomValue(RngState) + ScreenUV.y);
+        Direction += Horizontal * (PixelSize.x * frac(RandomValue(RngState)) + ScreenUV.x);
+        Direction += Vertical * (PixelSize.y * frac(RandomValue(RngState)) + ScreenUV.y);
 
     	float2 DefocusJitter = RandomPointInCircle(RngState) * 0.5 / PixelPos.x;
         Ray.Origin = Origin + RightVector * DefocusJitter.x + UpVector * DefocusJitter.y;
@@ -65,10 +67,8 @@ void RayTracingCS(
     }
     TotalIncomingLight /= SAMPLES_PER_PIXEL * 1.0;
 
-	float FrameCounter = ResolvedView.FrameNumber + 1.0;
-	TotalIncomingLight = saturate(lerp(LastFrameSceneColor.rgb, TotalIncomingLight, 1.0 / FrameCounter));
-
-	// TotalIncomingLight += LastFrameSceneColor.rgb;
+    float FrameWeight = 1.0 / (FrameCounter + 1);
+	TotalIncomingLight = saturate(lerp(LastFrameSceneColor.rgb, TotalIncomingLight, FrameWeight));
 	
 	OutputUAV[DispatchThreadID.xy] = float4(TotalIncomingLight, 1.0);
 }
@@ -79,6 +79,5 @@ void RayTracingOutPS(
 	)
 {
     float4 CurrentFrameSceneColor = InRayTracingResult.Load(int3(SvPosition.xy, 0));
-	// CurrentFrameSceneColor /= CurrentFrameSceneColor.w;
-	OutValue = CurrentFrameSceneColor;
+	OutValue = float4(saturate(CurrentFrameSceneColor).rgb, 1.0);
 }

@@ -16,6 +16,8 @@
 FRayTracingViewExtension::FRayTracingViewExtension(const FAutoRegister& AutoRegister, URayTracingWorldSubSystem* InWorldSubSystem)
 	: FSceneViewExtensionBase(AutoRegister)
 	, WorldSubSystem(InWorldSubSystem)
+    , ViewRectSize(FIntPoint::ZeroValue)
+    , LastFrameViewMatrix(FMatrix::Identity)
 {
 }
 
@@ -64,14 +66,14 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	        FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("LastFrameResult"), Viewport.Extent, PF_A32B32G32R32F);
 	        CreateDesc.SetFlags(ETextureCreateFlags::ShaderResource | ETextureCreateFlags::RenderTargetable);
 	        LastFrameResult = RHICreateTexture(CreateDesc);
-	        // auto TestTexture = RHICreateTexture(CreateDesc);
-	        
-	        // LastFrameTempRT = CreateRenderTarget(TestTexture, TEXT("LastFrameRT"));
+
+	        FrameCounter = 0;
 	    }
 	    FRDGTextureRef LastFrameResultRDG = RegisterExternalTexture(GraphBuilder, LastFrameResult, TEXT("LastFrameResult"));
 	    
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
+	    RayTracingCSParams->FrameCounter = FrameCounter;
 		RayTracingCSParams->SkyDomeCube = SettingsProxy.SkyDomeCube;
 		RayTracingCSParams->SkyDomeCubeSampler = TStaticSamplerState<SF_Bilinear>::GetRHI();
 		RayTracingCSParams->LastFrameResult = GraphBuilder.CreateSRV(LastFrameResultRDG);
@@ -88,8 +90,6 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	    FRHICopyTextureInfo CopyInfo;
 	    AddCopyTexturePass(GraphBuilder, RayTracingResultTexture, LastFrameResultRDG, CopyInfo);
 	    
-	    // GraphBuilder.QueueTextureExtraction(LastFrameResultRDG, &LastFrameTempRT);
-	    
 		auto* FullScreenPassParameters = GraphBuilder.AllocParameters<FRayTracingOutPS::FParameters>();
 		FullScreenPassParameters->InRayTracingResult = GraphBuilder.CreateSRV(RayTracingResultTexture);
 		FullScreenPassParameters->RayTracingViewExtension.RenderTargets[0] = FRenderTargetBinding((*Inputs.SceneTextures)->SceneColorTexture, ERenderTargetLoadAction::EClear);
@@ -102,6 +102,8 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 			FullScreenPassParameters,
 			Viewport.Rect,
 			TStaticBlendState<CW_RGB>::GetRHI());
+
+	    FrameCounter++;
 	}
 }
 

@@ -31,4 +31,5 @@ private:
 	FRDGTextureRef RayTracingResultTexture {};
 	TRefCountPtr<FRHITexture2D> LastFrameResult;
     FMatrix LastFrameViewMatrix;
+    uint32 FrameCounter = 0;
 };
