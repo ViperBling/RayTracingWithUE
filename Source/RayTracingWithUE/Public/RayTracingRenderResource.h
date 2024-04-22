@@ -12,7 +12,7 @@ class ARayTracingWorldSettings;
 class URayTracingWorldSubSystem;
 
 UENUM()
-enum class EMaterialType
+enum class EMaterialType : uint8
 {
     E_Light,
     E_Diffuse,
@@ -24,6 +24,14 @@ USTRUCT()
 struct FRayTracingMaterial
 {
     GENERATED_USTRUCT_BODY()
+
+    FRayTracingMaterial()
+        : MaterialType(EMaterialType::E_Diffuse)
+        , Albedo(FLinearColor::White)
+        , Emission(0.0f)
+        , Roughness(0.0f)
+        , RefractiveIndex(1.0f)
+    {}
     
     UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
     EMaterialType MaterialType;

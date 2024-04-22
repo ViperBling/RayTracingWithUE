@@ -106,13 +106,13 @@ void ARayTracingWorldSettings::AddRTSceneComponent(URTRenderingComponent* RTComp
 
 void ARayTracingWorldSettings::RemoveRTSceneComponent(URTRenderingComponent* RTComponent)
 {
-    auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    auto RenderData = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
     {
         return InData.ComponentID == RTComponent->GetUniqueID();
     });
-    if (Data)
+    if (RenderData)
     {
-        RTRenderData.Remove(*Data);
+        RTRenderData.RemoveAt(RTRenderData.Find(*RenderData));
     }
 }
 

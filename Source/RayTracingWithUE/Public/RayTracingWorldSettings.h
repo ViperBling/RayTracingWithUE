@@ -15,6 +15,13 @@ struct FRTMeshRenderData
 {
     GENERATED_BODY()
 
+	FRTMeshRenderData()
+		: ComponentID(0)
+		, Position(FVector::ZeroVector)
+		, Radius(0.0f)
+		, Material(FRayTracingMaterial())
+	{}
+
     UPROPERTY()
     uint32 ComponentID;
     

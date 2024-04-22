@@ -7,7 +7,7 @@
 #include "PixelShaderUtils.h"
 #include "PostProcess/PostProcessing.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
-
+#include "RayTracingWorldSettings.h"
 #include "RayTracingWorldSubSystem.h"
 #include "RayTracingRendering.h"
 #include "ScenePrivate.h"
@@ -52,6 +52,25 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	    
 		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable);
 		RayTracingResultTexture = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"), ERDGTextureFlags::MultiFrame);
+
+		// FRDGBufferDesc MeshDataDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTMeshRenderData), SettingsProxy.RTRenderData.Num());
+		// MeshDataDesc.Usage = EBufferUsageFlags(MeshDataDesc.Usage | BUF_SourceCopy);
+		// FRDGBufferRef MeshDataBuffer = GraphBuilder.CreateBuffer(MeshDataDesc, TEXT("MeshDataBuffer"));
+
+		// ENQUEUE_RENDER_COMMAND(RTRenderDataCopy)(
+		// 	[this](FRHICommandListImmediate& RHICmdList)
+		// 	{
+				auto& RHICmdList = GraphBuilder.RHICmdList;
+				FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTMeshRenderData), SettingsProxy.RTRenderData.Num());
+				BufferDesc.Usage |= EBufferUsageFlags::Dynamic;
+				AllocatePooledBuffer(BufferDesc, SettingsProxy.RTRenderDataBuffer, TEXT("RTRenderDataBuffer"));
+		
+				void* BufferData = RHICmdList.LockBuffer(SettingsProxy.RTRenderDataBuffer->GetRHI(), 0, sizeof(FRTMeshRenderData) * SettingsProxy.RTRenderData.Num(), RLM_WriteOnly);
+				FMemory::Memcpy(BufferData, SettingsProxy.RTRenderData.GetData(), sizeof(FRTMeshRenderData) * SettingsProxy.RTRenderData.Num());
+				RHICmdList.UnlockBuffer(SettingsProxy.RTRenderDataBuffer->GetRHI());
+		// 	});
+
+		auto MeshRenderData = GraphBuilder.RegisterExternalBuffer(SettingsProxy.RTRenderDataBuffer, TEXT("MeshDataBuffer"));
 	    
 	    bool bShouldResize = false;
 	    if (ViewRectSize != Viewport.Extent || LastFrameViewMatrix != InView.ViewMatrices.GetViewMatrix())
@@ -73,6 +92,7 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	    
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
+		RayTracingCSParams->RTRenderDataBuffer = GraphBuilder.CreateSRV(MeshRenderData);
 	    RayTracingCSParams->FrameCounter = FrameCounter;
 		RayTracingCSParams->SkyDomeCube = SettingsProxy.SkyDomeCube == nullptr ? GSystemTextures.CubeBlackDummy->GetRHI() : SettingsProxy.SkyDomeCube;
 		RayTracingCSParams->SkyDomeCubeSampler = TStaticSamplerState<SF_Bilinear>::GetRHI();

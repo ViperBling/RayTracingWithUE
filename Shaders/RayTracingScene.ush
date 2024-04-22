@@ -19,6 +19,14 @@ struct FRayTracingMaterial
     float RefractiveIndex;
 };
 
+struct FRTMeshRenderData
+{
+    int ID;
+    float3 Position;
+    float Radius;
+    FRayTracingMaterial Material;
+};
+
 struct FHitInfo
 {
     bool bHit;

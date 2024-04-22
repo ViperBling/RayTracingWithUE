@@ -4,6 +4,7 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "RayTracingWorldSubSystem.generated.h"
 
+struct FRTMeshRenderData;
 class ARayTracingWorldSettings;
 
 struct FRayTracingSettingsRenderProxy
@@ -11,6 +12,8 @@ struct FRayTracingSettingsRenderProxy
 	bool bEnableRayTracing;
 	int SamplerPerPixel;
 	FRHITextureCube* SkyDomeCube;
+	TArray<FRTMeshRenderData> RTRenderData;
+	TRefCountPtr<FRDGPooledBuffer> RTRenderDataBuffer;
 };
 
 UCLASS()
