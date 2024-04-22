@@ -74,7 +74,7 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
 	    RayTracingCSParams->FrameCounter = FrameCounter;
-		RayTracingCSParams->SkyDomeCube = SettingsProxy.SkyDomeCube;
+		RayTracingCSParams->SkyDomeCube = SettingsProxy.SkyDomeCube == nullptr ? GSystemTextures.CubeBlackDummy->GetRHI() : SettingsProxy.SkyDomeCube;
 		RayTracingCSParams->SkyDomeCubeSampler = TStaticSamplerState<SF_Bilinear>::GetRHI();
 		RayTracingCSParams->LastFrameResult = GraphBuilder.CreateSRV(LastFrameResultRDG);
 		RayTracingCSParams->OutputUAV = GraphBuilder.CreateUAV(RayTracingResultTexture);

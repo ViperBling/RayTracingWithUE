@@ -1,7 +1,74 @@
 ﻿#pragma once
 
-class RayTracingRenderResource
+#include "CoreMinimal.h"
+#include "Components/SceneComponent.h"
+#include "Components/BillboardComponent.h"
+#include "Engine/StaticMeshActor.h"
+#include "RayTracingWorldSubSystem.h"
+#include "RayTracingRenderResource.generated.h"
+
+class UBillboardComponent;
+class ARayTracingWorldSettings;
+class URayTracingWorldSubSystem;
+
+UENUM()
+enum class EMaterialType
 {
+    E_Light,
+    E_Diffuse,
+    E_Metal,
+    E_Dialectric
+};
+
+USTRUCT()
+struct FRayTracingMaterial
+{
+    GENERATED_USTRUCT_BODY()
+    
+    UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
+    EMaterialType MaterialType;
+
+    UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
+    FLinearColor Albedo;
+
+    UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
+    float Emission;
+
+    UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
+    float Roughness;
+
+    UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
+    float RefractiveIndex;
+};
+
+UCLASS(hidecategories = (Collision, Object, Physics, SceneComponent, Activation, "Components|Activation", Mobility), ClassGroup = Rendering, meta = (BlueprintSpawnableComponent))
+class URTRenderingComponent : public USceneComponent
+{
+    GENERATED_UCLASS_BODY()
 public:
-	
+    
+#if WITH_EDITOR
+    virtual void PostEditComponentMove(bool bFinished) override;
+    virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+    virtual void OnRegister() override;
+    virtual void OnUnregister() override;
+
+    void AddRTComponentToProxy();
+    void RemoveRTComponentFromProxy();
+    void UpdateDataToProxy();
+
+public:
+
+    UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
+    FRayTracingMaterial Material;
+
+    UPROPERTY()
+    FVector Position = FVector::ZeroVector;
+    
+    UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
+    float Radius = 100;
+
+private:
+    TObjectPtr<ARayTracingWorldSettings> RayTracingWorldSettings;
 };

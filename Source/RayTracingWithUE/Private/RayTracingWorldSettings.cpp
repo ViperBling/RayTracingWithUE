@@ -80,3 +80,53 @@ void ARayTracingWorldSettings::GatherSceneMeshData()
 		}
 	}
 }
+
+void ARayTracingWorldSettings::AddRTSceneComponent(URTRenderingComponent* RTComponent)
+{
+    auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    {
+        return InData.ComponentID == RTComponent->GetUniqueID();
+    });
+    if (!Data)
+    {
+        FRTMeshRenderData NewData;
+        NewData.ComponentID = RTComponent->GetUniqueID();
+        NewData.Position = RTComponent->Position;
+        NewData.Radius = RTComponent->Radius;
+        NewData.Material = RTComponent->Material;
+        RTRenderData.Add(NewData);
+    }
+    else
+    {
+        Data->Position = RTComponent->Position;
+        Data->Radius = RTComponent->Radius;
+        Data->Material = RTComponent->Material;
+    }
+}
+
+void ARayTracingWorldSettings::RemoveRTSceneComponent(URTRenderingComponent* RTComponent)
+{
+    auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    {
+        return InData.ComponentID == RTComponent->GetUniqueID();
+    });
+    if (Data)
+    {
+        RTRenderData.Remove(*Data);
+    }
+}
+
+void ARayTracingWorldSettings::UpdateRTSceneComponent(URTRenderingComponent* RTComponent)
+{
+    auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    {
+        return InData.ComponentID == RTComponent->GetUniqueID();;
+    });
+
+    if (Data)
+    {
+        Data->Position = RTComponent->Position;
+        Data->Radius = RTComponent->Radius;
+        Data->Material = RTComponent->Material;
+    }
+}

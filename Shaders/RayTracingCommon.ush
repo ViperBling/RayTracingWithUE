@@ -88,6 +88,26 @@ FHitInfo HitScene(FRay Ray, FSphere Sphere)
 FHitInfo HitScene(FRay Ray, FTriangle Triangle)
 {
     FHitInfo HitInfo = (FHitInfo)0;
+
+    float3 EdgeAB = Triangle.B - Triangle.A;
+    float3 EdgeAC = Triangle.C - Triangle.A;
+    float3 Normal = normalize(cross(EdgeAB, EdgeAC));
+    float3 AO = Ray.Origin - Triangle.A;
+    float3 DAO = cross(AO, Ray.Direction);
+
+    float Determinant = -dot(Ray.Direction, Normal);
+    float InvDet = 1.0 / Determinant;
+
+    float Dst = dot(AO, Normal) * InvDet;
+    float U = dot(DAO, EdgeAC) * InvDet;
+    float V = -dot(DAO, EdgeAB) * InvDet;
+    float W = 1 - U - V;
+
+    HitInfo.bHit = Determinant >= 1E-6 && Dst >= 0 && U >= 0 && V >= 0 && W >= 0;
+    HitInfo.HitDistance = Dst;
+    HitInfo.HitPosition = Ray.Origin + Ray.Direction * Dst;
+    HitInfo.HitNormal = normalize(Triangle.NormalA * W + Triangle.NormalB * U + Triangle.NormalC * V);
+    
     return HitInfo;
 }
 

@@ -2,8 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
-#include "RayTracingWorldSettings.h"
 #include "RayTracingWorldSubSystem.generated.h"
+
+class ARayTracingWorldSettings;
 
 struct FRayTracingSettingsRenderProxy
 {

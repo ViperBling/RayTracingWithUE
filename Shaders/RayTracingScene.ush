@@ -10,7 +10,7 @@
 #define MAT_METAL 2
 #define MAT_DIALECTRIC 3
 
-struct FHitMaterial
+struct FRayTracingMaterial
 {
     int Type;
     float3 Albedo;
@@ -25,7 +25,7 @@ struct FHitInfo
     float HitDistance;
     float3 HitPosition;
     float3 HitNormal;
-    FHitMaterial Material;
+    FRayTracingMaterial Material;
 };
 
 struct FRay
@@ -39,14 +39,14 @@ struct FQuad
     float3 Q;
     float3 A;
     float3 B;
-    FHitMaterial Material;
+    FRayTracingMaterial Material;
 };
 
 struct FSphere
 {
     float3 Position;
     float Radius;
-    FHitMaterial Material;
+    FRayTracingMaterial Material;
 };
 
 struct FTriangle
@@ -54,20 +54,23 @@ struct FTriangle
     float3 A;
     float3 B;
     float3 C;
-    FHitMaterial Material;
+    float3 NormalA;
+    float3 NormalB;
+    float3 NormalC;
+    FRayTracingMaterial Material;
 };
 
 struct FPlane
 {
     float3 Normal;
     float3 P;
-    FHitMaterial Material;
+    FRayTracingMaterial Material;
 };
 
 // Albedo, Emission, Roughness, RefractiveIndex
-FHitMaterial LIGHT(float3 Albedo, float Emission)
+FRayTracingMaterial LIGHT(float3 Albedo, float Emission)
 {
-    FHitMaterial Material;
+    FRayTracingMaterial Material;
     Material.Type = MAT_LIGHT;
     Material.Albedo = Albedo;
     Material.Emission = Emission;
@@ -76,9 +79,9 @@ FHitMaterial LIGHT(float3 Albedo, float Emission)
     return Material;
 }
 
-FHitMaterial LAMBERT(float3 Albedo)
+FRayTracingMaterial LAMBERT(float3 Albedo)
 {
-    FHitMaterial Material;
+    FRayTracingMaterial Material;
     Material.Type = MAT_DIFFUSE;
     Material.Albedo = Albedo;
     Material.Emission = -1;
@@ -87,9 +90,9 @@ FHitMaterial LAMBERT(float3 Albedo)
     return Material;
 }
 
-FHitMaterial METAL(float3 Albedo, float Roughness)
+FRayTracingMaterial METAL(float3 Albedo, float Roughness)
 {
-    FHitMaterial Material;
+    FRayTracingMaterial Material;
     Material.Type = MAT_METAL;
     Material.Albedo = Albedo;
     Material.Emission = -1;
@@ -98,9 +101,9 @@ FHitMaterial METAL(float3 Albedo, float Roughness)
     return Material;
 }
 
-FHitMaterial GLASS(float3 Albedo, float RefractiveIndex)
+FRayTracingMaterial GLASS(float3 Albedo, float RefractiveIndex)
 {
-    FHitMaterial Material;
+    FRayTracingMaterial Material;
     Material.Type = MAT_DIALECTRIC;
     Material.Albedo = Albedo;
     Material.Emission = -1;

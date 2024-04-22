@@ -2,6 +2,7 @@
 #include "EngineUtils.h"
 #include "SceneViewExtension.h"
 #include "SystemTextures.h"
+#include "RayTracingWorldSettings.h"
 #include "Engine/TextureCube.h"
 
 void URayTracingWorldSubSystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -52,10 +53,15 @@ void URayTracingWorldSubSystem::Tick(float DeltaTime)
 		}
 		else
 		{
-			TempSettings.SkyDomeCube = GSystemTextures.BlackDummy->GetRHI();
+			TempSettings.SkyDomeCube = GSystemTextures.CubeBlackDummy->GetRHI();
 		}
 		FScopeLock Lock(&Mutex);
 		SettingsProxy = TempSettings;
+
+	    for (auto& Data : RayTracingWorldSettings->RTRenderData)
+	    {
+	        UE_LOG(LogTemp, Warning, TEXT("DataID : %i, Position: %s, Radius: %f"), Data.ComponentID, *Data.Position.ToString(), Data.Radius);
+	    }
 	}
 }
 
