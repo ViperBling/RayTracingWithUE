@@ -1,5 +1,4 @@
 ﻿#include "RayTracingWorldSettings.h"
-
 #include "Editor.h"
 #include "EditorLevelLibrary.h"
 #include "RayTracingWorldSubSystem.h"
@@ -26,15 +25,15 @@ void ARayTracingWorldSettings::BeginPlay()
 
 void ARayTracingWorldSettings::BeginDestroy()
 {
-	const UWorld* World = GetWorld();
-	if (World)
-	{
-		URayTracingWorldSubSystem* RayTracingWorldSubSystem = World->GetSubsystem<URayTracingWorldSubSystem>();
-		if (RayTracingWorldSubSystem)
-		{
-			RayTracingWorldSubSystem->OnActorDeleted(this);
-		}
-	}
+	// const UWorld* World = GetWorld();
+	// if (World)
+	// {
+	// 	URayTracingWorldSubSystem* RayTracingWorldSubSystem = World->GetSubsystem<URayTracingWorldSubSystem>();
+	// 	if (RayTracingWorldSubSystem)
+	// 	{
+	// 		RayTracingWorldSubSystem->OnActorDeleted(this);
+	// 	}
+	// }
 	
 	Super::BeginDestroy();
 }
@@ -91,14 +90,14 @@ void ARayTracingWorldSettings::AddRTSceneComponent(URTRenderingComponent* RTComp
     {
         FRTMeshRenderData NewData;
         NewData.ComponentID = RTComponent->GetUniqueID();
-        NewData.Position = RTComponent->Position;
+        NewData.Position = FVector3f(RTComponent->GetComponentLocation());
         NewData.Radius = RTComponent->Radius;
         NewData.Material = RTComponent->Material;
         RTRenderData.Add(NewData);
     }
     else
     {
-        Data->Position = RTComponent->Position;
+        Data->Position = FVector3f(RTComponent->GetComponentLocation());
         Data->Radius = RTComponent->Radius;
         Data->Material = RTComponent->Material;
     }
@@ -125,7 +124,7 @@ void ARayTracingWorldSettings::UpdateRTSceneComponent(URTRenderingComponent* RTC
 
     if (Data)
     {
-        Data->Position = RTComponent->Position;
+        Data->Position = FVector3f(RTComponent->GetComponentLocation());
         Data->Radius = RTComponent->Radius;
         Data->Material = RTComponent->Material;
     }

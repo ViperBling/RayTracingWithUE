@@ -50,7 +50,7 @@ struct FRayTracingMaterial
 };
 
 UCLASS(hidecategories = (Collision, Object, Physics, SceneComponent, Activation, "Components|Activation", Mobility), ClassGroup = Rendering, meta = (BlueprintSpawnableComponent))
-class URTRenderingComponent : public USceneComponent
+class URTRenderingComponent : public UStaticMeshComponent
 {
     GENERATED_UCLASS_BODY()
 public:
@@ -70,13 +70,13 @@ public:
 
     UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
     FRayTracingMaterial Material;
-
-    UPROPERTY()
-    FVector3f Position = FVector3f::ZeroVector;
     
     UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
     float Radius = 100;
 
+private:
+    void GetRTSettingActor();
+    
 private:
     TObjectPtr<ARayTracingWorldSettings> RayTracingWorldSettings;
 };
