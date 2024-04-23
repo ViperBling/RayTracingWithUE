@@ -61,15 +61,6 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	    TRefCountPtr<FRDGPooledBuffer> RTRenderDataBuffer;
 		auto& RHICmdList = GraphBuilder.RHICmdList;
 		FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTMeshRenderData), MeshCount);
-	    // UE_LOG(LogTemp, Warning, TEXT("RTRenderData.Num(): %d, ComponentIDSize: %d, PositionSize: %llu, RadiusSize: %llu, MatTypeSize: %llu, MatAlbedoSize: %llu, MatEmissionSize: %llu, MatRoughSize: %llu, MatRefracSize: %llu"), MeshCount,
-	    //     SettingsProxy.RTRenderData[0].ComponentID,
-        //     sizeof(SettingsProxy.RTRenderData[0].Position),
-        //     sizeof(SettingsProxy.RTRenderData[0].Radius),
-        //     sizeof(SettingsProxy.RTRenderData[0].Material.MaterialType),
-        //     sizeof(SettingsProxy.RTRenderData[0].Material.Albedo),
-        //     sizeof(SettingsProxy.RTRenderData[0].Material.Emission),
-        //     sizeof(SettingsProxy.RTRenderData[0].Material.Roughness),
-        //     sizeof(SettingsProxy.RTRenderData[0].Material.RefractiveIndex));
 		AllocatePooledBuffer(BufferDesc, RTRenderDataBuffer, TEXT("RTRenderDataBuffer"));
 	    
 	    // ResizeBufferIfNeeded(GraphBuilder, SettingsProxy.RTRenderDataBuffer, BufferDesc, TEXT("RTRenderDataBuffer"));
@@ -101,6 +92,7 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
 		RayTracingCSParams->RTRenderDataBuffer = GraphBuilder.CreateSRV(MeshRenderData, PF_R32G32B32F);
+	    RayTracingCSParams->NumMeshes = MeshCount;
 	    RayTracingCSParams->FrameCounter = FrameCounter;
 		RayTracingCSParams->SkyDomeCube = SettingsProxy.SkyDomeCube == nullptr ? GSystemTextures.CubeBlackDummy->GetRHI() : SettingsProxy.SkyDomeCube;
 		RayTracingCSParams->SkyDomeCubeSampler = TStaticSamplerState<SF_Bilinear>::GetRHI();

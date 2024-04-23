@@ -10,7 +10,6 @@ SamplerState SkyDomeCubeSampler;
 uint FrameCounter;
 
 Texture2D LastFrameResult;
-StructuredBuffer<FRTMeshRenderData> RTRenderDataBuffer;
 
 Texture2D InRayTracingResult;
 
@@ -72,7 +71,7 @@ void RayTracingCS(
     float FrameWeight = 1.0 / (FrameCounter + 1);
 	TotalIncomingLight = saturate(lerp(LastFrameSceneColor.rgb, TotalIncomingLight, FrameWeight));
 	
-	OutputUAV[DispatchThreadID.xy] = float4(RTRenderDataBuffer[0].Material.Albedo.xyz, 1.0);
+	OutputUAV[DispatchThreadID.xy] = float4(TotalIncomingLight, 1.0);
 }
 
 void RayTracingOutPS(

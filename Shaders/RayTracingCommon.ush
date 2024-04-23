@@ -85,6 +85,32 @@ FHitInfo HitScene(FRay Ray, FSphere Sphere)
     return HitInfo;
 }
 
+FHitInfo HitScene(FRay Ray, float3 Position, float3 Radius)
+{
+    FHitInfo HitInfo = (FHitInfo)0;
+    
+    float3 OffsetRayOrigin = Ray.Origin - Position;
+
+    float a = dot(Ray.Direction, Ray.Direction);
+    float b = dot(OffsetRayOrigin, Ray.Direction) * 2.0;
+    float c = dot(OffsetRayOrigin, OffsetRayOrigin) - Radius * Radius;
+    float Discriminant = b * b - 4.0 * a * c;
+
+    if (Discriminant >= 0)
+    {
+        float Dist = (-b - sqrt(Discriminant)) / (2.0 * a);
+        if (Dist >= 0)
+        {
+            HitInfo.bHit = true;
+            HitInfo.HitDistance = Dist;
+            HitInfo.HitPosition = Ray.Origin + Ray.Direction * Dist;
+            HitInfo.HitNormal = normalize(HitInfo.HitPosition - Position);
+        }
+    }
+    
+    return HitInfo;
+}
+
 FHitInfo HitScene(FRay Ray, FTriangle Triangle)
 {
     FHitInfo HitInfo = (FHitInfo)0;
@@ -117,20 +143,20 @@ FHitInfo HitScene(FRay Ray, FPlane Plane)
     return HitInfo;
 }
 
-FHitInfo HitScene(FRay Ray, FSphere Spheres[NUM_SPHERE])
-{
-    FHitInfo HitInfo = (FHitInfo)0;
-    HitInfo.bHit = false;
-    HitInfo.HitDistance = INFINITE_FLOAT;
-
-    for (int i = 0; i < NUM_SPHERE; i++)
-    {
-        FHitInfo LocalHit = HitScene(Ray, Spheres[i]);
-        if (LocalHit.bHit && LocalHit.HitDistance < HitInfo.HitDistance && LocalHit.HitDistance > 0.0001)
-        {
-            HitInfo = LocalHit;
-        }
-    }
+// FHitInfo HitScene(FRay Ray, FSphere Spheres[NUM_SPHERE])
+// {
+//     FHitInfo HitInfo = (FHitInfo)0;
+//     HitInfo.bHit = false;
+//     HitInfo.HitDistance = INFINITE_FLOAT;
+//
+//     for (int i = 0; i < NUM_SPHERE; i++)
+//     {
+//         FHitInfo LocalHit = HitScene(Ray, Spheres[i]);
+//         if (LocalHit.bHit && LocalHit.HitDistance < HitInfo.HitDistance && LocalHit.HitDistance > 0.0001)
+//         {
+//             HitInfo = LocalHit;
+//         }
+//     }
     // for (int i = 0; i < NUM_QUAD; i++)
     // {
     //     FHitInfo LocalHit = HitScene(Ray, Quads[i]);
@@ -155,6 +181,25 @@ FHitInfo HitScene(FRay Ray, FSphere Spheres[NUM_SPHERE])
     //         HitInfo = LocalHit;
     //     }
     // }
+    // return HitInfo;
+// }
+
+FHitInfo RayCollision(FRay Ray)
+{
+    FHitInfo HitInfo = (FHitInfo)0;
+    HitInfo.HitDistance = INFINITE_FLOAT;
+
+    for (int i = 0; i < NumMeshes; i++)
+    {
+        FRTMeshRenderData Mesh = RTRenderDataBuffer[i];
+        FHitInfo LocalHit = HitScene(Ray, Mesh.Position, Mesh.Radius);
+
+        if (LocalHit.bHit && LocalHit.HitDistance < HitInfo.HitDistance && LocalHit.HitDistance > 0.0001)
+        {
+            HitInfo = LocalHit;
+            HitInfo.Material = Mesh.Material;
+        }
+    }
     return HitInfo;
 }
 
@@ -187,9 +232,6 @@ float3 LightSample(FHitInfo HitInfo, FSphere Spheres[NUM_SPHERE])
 
 float3 TraceRay(FRay Ray, inout int RngState, TextureCube SkyCube, SamplerState CubeSampler)
 {
-    FSphere Spheres[NUM_SPHERE];
-    InitScene(Spheres);
-
     // SkyColor = 0.1 * (1 + Ray.Direction.z ) * float3(0.5, 0.7, 1.0);
 
 	float3 IncomingLight = 0;
@@ -198,7 +240,7 @@ float3 TraceRay(FRay Ray, inout int RngState, TextureCube SkyCube, SamplerState 
 
     for (int i = 0; i < MAX_BOUNCE; i++)
     {
-        FHitInfo HitInfo = HitScene(Ray, Spheres);
+        FHitInfo HitInfo = RayCollision(Ray);
 
         if (HitInfo.bHit)
         {
