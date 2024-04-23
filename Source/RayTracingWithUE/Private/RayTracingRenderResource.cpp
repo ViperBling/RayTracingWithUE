@@ -53,7 +53,7 @@ void URTRenderingComponent::AddRTComponentToProxy()
     USceneComponent* Parent = Cast<USceneComponent>(GetAttachParent());
     if (Parent)
     {
-        Position = Parent->GetComponentTransform().GetLocation();
+        Position = FVector3f(Parent->GetComponentTransform().GetLocation());
     }
     RayTracingWorldSettings->AddRTSceneComponent(this);
 }
@@ -68,7 +68,7 @@ void URTRenderingComponent::UpdateDataToProxy()
     USceneComponent* Parent = Cast<USceneComponent>(GetAttachParent());
     if (Parent)
     {
-        Position = Parent->GetComponentTransform().GetLocation();
+        Position = FVector3f(Parent->GetComponentTransform().GetLocation());
     }
     RayTracingWorldSettings->UpdateRTSceneComponent(this);
 }

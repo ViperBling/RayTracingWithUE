@@ -12,8 +12,8 @@
 
 struct FRayTracingMaterial
 {
-    int Type;
-    float3 Albedo;
+    uint Type;
+    float4 Albedo;
     float Emission;
     float Roughness;
     float RefractiveIndex;
@@ -21,7 +21,7 @@ struct FRayTracingMaterial
 
 struct FRTMeshRenderData
 {
-    int ID;
+    uint ID;
     float3 Position;
     float Radius;
     FRayTracingMaterial Material;
@@ -80,7 +80,7 @@ FRayTracingMaterial LIGHT(float3 Albedo, float Emission)
 {
     FRayTracingMaterial Material;
     Material.Type = MAT_LIGHT;
-    Material.Albedo = Albedo;
+    Material.Albedo = float4(Albedo, 1.0);
     Material.Emission = Emission;
     Material.Roughness = 0;
     Material.RefractiveIndex = -1;
@@ -91,7 +91,7 @@ FRayTracingMaterial LAMBERT(float3 Albedo)
 {
     FRayTracingMaterial Material;
     Material.Type = MAT_DIFFUSE;
-    Material.Albedo = Albedo;
+    Material.Albedo = float4(Albedo, 1.0);
     Material.Emission = -1;
     Material.Roughness = 1;
     Material.RefractiveIndex = -1;
@@ -102,7 +102,7 @@ FRayTracingMaterial METAL(float3 Albedo, float Roughness)
 {
     FRayTracingMaterial Material;
     Material.Type = MAT_METAL;
-    Material.Albedo = Albedo;
+    Material.Albedo = float4(Albedo, 1.0);
     Material.Emission = -1;
     Material.Roughness = Roughness;
     Material.RefractiveIndex = -1;
@@ -113,7 +113,7 @@ FRayTracingMaterial GLASS(float3 Albedo, float RefractiveIndex)
 {
     FRayTracingMaterial Material;
     Material.Type = MAT_DIALECTRIC;
-    Material.Albedo = Albedo;
+    Material.Albedo = float4(Albedo, 1.0);
     Material.Emission = -1;
     Material.Roughness = 0;
     Material.RefractiveIndex = RefractiveIndex;

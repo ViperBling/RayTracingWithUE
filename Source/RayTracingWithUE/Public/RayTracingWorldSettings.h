@@ -26,7 +26,7 @@ struct FRTMeshRenderData
     uint32 ComponentID;
     
     UPROPERTY()
-    FVector Position;
+    FVector3f Position;
     
     UPROPERTY()
     float Radius;

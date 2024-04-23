@@ -12,12 +12,12 @@ class ARayTracingWorldSettings;
 class URayTracingWorldSubSystem;
 
 UENUM()
-enum class EMaterialType : uint8
+enum class EMaterialType : uint32
 {
-    E_Light,
-    E_Diffuse,
-    E_Metal,
-    E_Dialectric
+    E_Light = 0,
+    E_Diffuse = 1,
+    E_Metal = 2,
+    E_Dialectric = 3,
 };
 
 USTRUCT()
@@ -72,7 +72,7 @@ public:
     FRayTracingMaterial Material;
 
     UPROPERTY()
-    FVector Position = FVector::ZeroVector;
+    FVector3f Position = FVector3f::ZeroVector;
     
     UPROPERTY(EditAnywhere, Category = RayTracingMaterial)
     float Radius = 100;
