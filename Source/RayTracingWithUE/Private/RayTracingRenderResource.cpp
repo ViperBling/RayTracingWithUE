@@ -1,12 +1,14 @@
 ﻿#include "RayTracingRenderResource.h"
 #include "RayTracingWorldSettings.h"
 #include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
 
 URTRenderingComponent::URTRenderingComponent(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
     , Material()
     , Radius(100)
 {
+    GetRTSettingActor();
 }
 
 #if WITH_EDITOR
@@ -76,13 +78,7 @@ void URTRenderingComponent::GetRTSettingActor()
     UWorld* World = GetWorld();
     if (World)
     {
-        for (FActorIterator It(GetWorld()); It; ++It)
-        {
-            ARayTracingWorldSettings* Settings = Cast<ARayTracingWorldSettings>(*It);
-            if (Settings)
-            {
-                RayTracingWorldSettings = Settings;
-            }
-        }
+        auto RTSettingActor = UGameplayStatics::GetActorOfClass(World, ARayTracingWorldSettings::StaticClass());
+        RayTracingWorldSettings = Cast<ARayTracingWorldSettings>(RTSettingActor);
     }
 }

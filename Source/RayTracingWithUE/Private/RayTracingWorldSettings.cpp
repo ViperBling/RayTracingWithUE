@@ -25,15 +25,15 @@ void ARayTracingWorldSettings::BeginPlay()
 
 void ARayTracingWorldSettings::BeginDestroy()
 {
-	// const UWorld* World = GetWorld();
-	// if (World)
-	// {
-	// 	URayTracingWorldSubSystem* RayTracingWorldSubSystem = World->GetSubsystem<URayTracingWorldSubSystem>();
-	// 	if (RayTracingWorldSubSystem)
-	// 	{
-	// 		RayTracingWorldSubSystem->OnActorDeleted(this);
-	// 	}
-	// }
+	const UWorld* World = GetWorld();
+	if (World)
+	{
+		URayTracingWorldSubSystem* RayTracingWorldSubSystem = World->GetSubsystem<URayTracingWorldSubSystem>();
+		if (RayTracingWorldSubSystem)
+		{
+			RayTracingWorldSubSystem->OnActorDeleted(this);
+		}
+	}
 	
 	Super::BeginDestroy();
 }
