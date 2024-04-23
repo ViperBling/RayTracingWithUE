@@ -125,7 +125,7 @@ FRayTracingMaterial GLASS(float3 Albedo, float RefractiveIndex)
 
 // Scene
 
-void InitScene(inout FSphere Spheres[])
+void InitScene(inout FTriangle Spheres[])
 {
     // Spheres[0].Position = float3(0, 0, -100000);
     // Spheres[0].Radius = 100000;
