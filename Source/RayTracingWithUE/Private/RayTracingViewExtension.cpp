@@ -52,24 +52,46 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable);
 		RayTracingResultTexture = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"), ERDGTextureFlags::MultiFrame);
 
-	    uint32 MeshCount = SettingsProxy.RTRenderData.Num();
+	    uint32 MeshCount = SettingsProxy.RTMeshInfos.Num();
+	    uint32 TriangleCount = SettingsProxy.RTTriangles.Num();
 	    if (MeshCount == 0)
         {
             return;
         }
 
-	    TRefCountPtr<FRDGPooledBuffer> RTRenderDataBuffer;
-		auto& RHICmdList = GraphBuilder.RHICmdList;
-		FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTMeshRenderData), MeshCount);
-		AllocatePooledBuffer(BufferDesc, RTRenderDataBuffer, TEXT("RTRenderDataBuffer"));
+	    // TRefCountPtr<FRDGPooledBuffer> RTRenderDataBuffer;
+		// auto& RHICmdList = GraphBuilder.RHICmdList;
+		// FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTMeshRenderData), MeshCount);
+		// AllocatePooledBuffer(BufferDesc, RTRenderDataBuffer, TEXT("RTRenderDataBuffer"));
 	    
-	    // ResizeBufferIfNeeded(GraphBuilder, SettingsProxy.RTRenderDataBuffer, BufferDesc, TEXT("RTRenderDataBuffer"));
-	    
-		void* BufferData = RHICmdList.LockBuffer(RTRenderDataBuffer->GetRHI(), 0, sizeof(FRTMeshRenderData) * MeshCount, RLM_WriteOnly);
-		FMemory::Memcpy(BufferData, SettingsProxy.RTRenderData.GetData(), sizeof(FRTMeshRenderData) * MeshCount);
-		RHICmdList.UnlockBuffer(RTRenderDataBuffer->GetRHI());
+		// void* BufferData = RHICmdList.LockBuffer(RTRenderDataBuffer->GetRHI(), 0, sizeof(FRTMeshRenderData) * MeshCount, RLM_WriteOnly);
+		// FMemory::Memcpy(BufferData, SettingsProxy.RTRenderData.GetData(), sizeof(FRTMeshRenderData) * MeshCount);
+		// RHICmdList.UnlockBuffer(RTRenderDataBuffer->GetRHI());
 
-		auto MeshRenderData = GraphBuilder.RegisterExternalBuffer(RTRenderDataBuffer, TEXT("MeshDataBuffer"));
+		// auto MeshRenderData = GraphBuilder.RegisterExternalBuffer(RTRenderDataBuffer, TEXT("MeshDataBuffer"));
+
+	    // MeshInfoBuffer
+	    TRefCountPtr<FRDGPooledBuffer> RTMeshInfoBuffer;
+	    auto& RHICmdList = GraphBuilder.RHICmdList;
+	    FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTMeshInfo), MeshCount);
+	    AllocatePooledBuffer(BufferDesc, RTMeshInfoBuffer, TEXT("RTMeshInfoBuffer"));
+
+	    void* BufferData = RHICmdList.LockBuffer(RTMeshInfoBuffer->GetRHI(), 0, sizeof(FRTMeshInfo) * MeshCount, RLM_WriteOnly);
+	    FMemory::Memcpy(BufferData, SettingsProxy.RTMeshInfos.GetData(), sizeof(FRTMeshInfo) * MeshCount);
+	    RHICmdList.UnlockBuffer(RTMeshInfoBuffer->GetRHI());
+
+	    auto MeshInfoBuffer = GraphBuilder.RegisterExternalBuffer(RTMeshInfoBuffer, TEXT("MeshInfoBuffer"));
+
+	    // TriangleBuffer
+	    TRefCountPtr<FRDGPooledBuffer> RTTriangleBuffer;
+	    BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTTriangle), TriangleCount);
+	    AllocatePooledBuffer(BufferDesc, RTTriangleBuffer, TEXT("RTTriangleBuffer"));
+	    
+	    void* TriangleData = RHICmdList.LockBuffer(RTTriangleBuffer->GetRHI(), 0, sizeof(FRTTriangle) * TriangleCount, RLM_WriteOnly);
+	    FMemory::Memcpy(TriangleData, SettingsProxy.RTTriangles.GetData(), sizeof(FRTTriangle) * TriangleCount);
+	    RHICmdList.UnlockBuffer(RTTriangleBuffer->GetRHI());
+	    
+	    auto TriangleBuffer = GraphBuilder.RegisterExternalBuffer(RTTriangleBuffer, TEXT("TriangleBuffer"));
 	    
 	    bool bShouldResize = false;
 	    if (ViewRectSize != Viewport.Extent || LastFrameViewMatrix != InView.ViewMatrices.GetViewMatrix())
@@ -91,7 +113,8 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	    
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
-		RayTracingCSParams->RTRenderDataBuffer = GraphBuilder.CreateSRV(MeshRenderData, PF_R32G32B32F);
+		RayTracingCSParams->RTMeshInfoBuffer = GraphBuilder.CreateSRV(MeshInfoBuffer, PF_R32G32B32F);
+	    RayTracingCSParams->RTTriangleBuffer = GraphBuilder.CreateSRV(TriangleBuffer, PF_R32G32B32F);
 	    RayTracingCSParams->NumMeshes = MeshCount;
 	    RayTracingCSParams->FrameCounter = FrameCounter;
 		RayTracingCSParams->SkyDomeCube = SettingsProxy.SkyDomeCube == nullptr ? GSystemTextures.CubeBlackDummy->GetRHI() : SettingsProxy.SkyDomeCube;

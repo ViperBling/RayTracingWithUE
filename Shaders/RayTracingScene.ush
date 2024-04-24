@@ -27,8 +27,15 @@ struct FRTMeshRenderData
     FRayTracingMaterial Material;
 };
 
-StructuredBuffer<FRTMeshRenderData> RTRenderDataBuffer;
-uint NumMeshes;
+struct FMeshInfo
+{
+    uint ID;
+    uint FirstTriangleIdx;
+    uint NumTriangles;
+    float3 BoundMin;
+    float3 BoundMax;
+    FRayTracingMaterial Material;
+};
 
 struct FHitInfo
 {
@@ -68,7 +75,6 @@ struct FTriangle
     float3 NormalA;
     float3 NormalB;
     float3 NormalC;
-    FRayTracingMaterial Material;
 };
 
 struct FPlane
@@ -77,6 +83,11 @@ struct FPlane
     float3 P;
     FRayTracingMaterial Material;
 };
+
+// StructuredBuffer<MeshInfoBuffer> RTRenderDataBuffer;
+StructuredBuffer<FMeshInfo> RTMeshInfoBuffer;
+StructuredBuffer<FTriangle> RTTriangleBuffer;
+uint NumMeshes;
 
 // Albedo, Emission, Roughness, RefractiveIndex
 FRayTracingMaterial LIGHT(float3 Albedo, float Emission)
@@ -121,77 +132,4 @@ FRayTracingMaterial GLASS(float3 Albedo, float RefractiveIndex)
     Material.Roughness = 0;
     Material.RefractiveIndex = RefractiveIndex;
     return Material;
-}
-
-// Scene
-
-void InitScene(inout FTriangle Spheres[])
-{
-    // Spheres[0].Position = float3(0, 0, -100000);
-    // Spheres[0].Radius = 100000;
-    // Spheres[0].Material = LAMBERT(float3(0.9, 0.9, 0.9));
-    //
-    // Spheres[1].Position = float3(220, 0, 100);
-    // Spheres[1].Radius = 100;
-    // Spheres[1].Material = LIGHT(float3(0.1, 0.9, 0.9), 10);
-    //
-    // Spheres[2].Position = float3(-220, 0, 100);
-    // Spheres[2].Radius = 100;
-    // Spheres[2].Material = LIGHT(float3(0.9, 0.9, 0.1), 10);
-    //
-    // Spheres[3].Position = float3(600, 0, 200);
-    // Spheres[3].Radius = 200;
-    // Spheres[3].Material = GLASS(float3(1, 1, 1), 1.5);
-    //
-    // Spheres[4].Position = float3(220, 220, 100);
-    // Spheres[4].Radius = 100;
-    // Spheres[4].Material = METAL(float3(0.1, 0.9, 0.9), 1);
-    //
-    // Spheres[5].Position = float3(0, 220, 100);
-    // Spheres[5].Radius = 100;
-    // Spheres[5].Material = METAL(float3(0.9, 0.1, 0.9), 0.6);
-    //
-    // Spheres[6].Position = float3(-220, 220, 100);
-    // Spheres[6].Radius = 100;
-    // Spheres[6].Material = METAL(float3(0.9, 0.9, 0.1), 0.1);
-    //
-    // Spheres[7].Position = float3(220, -220, 100);
-    // Spheres[7].Radius = 100;
-    // Spheres[7].Material = LAMBERT(float3(0.1, 0.9, 0.9));
-    //
-    // Spheres[8].Position = float3(0, -220, 100);
-    // Spheres[8].Radius = 100;
-    // Spheres[8].Material = LAMBERT(float3(0.9, 0.1, 0.9));
-    //
-    // Spheres[9].Position = float3(-220, -220, 100);
-    // Spheres[9].Radius = 100;
-    // Spheres[9].Material = LAMBERT(float3(0.9, 0.9, 0.1));
-
-    for (int i = 0; i < NumMeshes; i++)
-    {
-        if (RTRenderDataBuffer[i].Material.Type == MAT_LIGHT)
-        {
-            Spheres[i].Position = RTRenderDataBuffer[i].Position;
-            Spheres[i].Radius = RTRenderDataBuffer[i].Radius;
-            Spheres[i].Material = LIGHT(RTRenderDataBuffer[i].Material.Albedo, RTRenderDataBuffer[i].Material.Emission);
-        }
-        if (RTRenderDataBuffer[i].Material.Type == MAT_DIFFUSE)
-        {
-            Spheres[i].Position = RTRenderDataBuffer[i].Position;
-            Spheres[i].Radius = RTRenderDataBuffer[i].Radius;
-            Spheres[i].Material = LAMBERT(RTRenderDataBuffer[i].Material.Albedo);
-        }
-        if (RTRenderDataBuffer[i].Material.Type == MAT_METAL)
-        {
-            Spheres[i].Position = RTRenderDataBuffer[i].Position;
-            Spheres[i].Radius = RTRenderDataBuffer[i].Radius;
-            Spheres[i].Material = METAL(RTRenderDataBuffer[i].Material.Albedo, RTRenderDataBuffer[i].Material.Roughness);
-        }
-        if (RTRenderDataBuffer[i].Material.Type == MAT_DIALECTRIC)
-        {
-            Spheres[i].Position = RTRenderDataBuffer[i].Position;
-            Spheres[i].Radius = RTRenderDataBuffer[i].Radius;
-            Spheres[i].Material = GLASS(RTRenderDataBuffer[i].Material.Albedo, RTRenderDataBuffer[i].Material.RefractiveIndex);
-        }
-    }
 }

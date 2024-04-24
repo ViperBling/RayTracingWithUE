@@ -19,15 +19,57 @@ struct FRTMeshRenderData
 		, Material(FRayTracingMaterial())
 	{}
 
+    bool operator==(const FRTMeshRenderData& Other) const
+	{
+	    return ComponentID == Other.ComponentID;
+	}
+
     uint32 ComponentID;
     FVector3f Position;
     float Radius;
     FRayTracingMaterial Material;
+};
 
-    bool operator==(const FRTMeshRenderData& Other) const
+struct FRTTriangle
+{
+    FRTTriangle()
+        : PosA(FVector3f::ZeroVector)
+        , PosB(FVector3f::ZeroVector)
+        , PosC(FVector3f::ZeroVector)
+        , NormalA(FVector3f::ZeroVector)
+        , NormalB(FVector3f::ZeroVector)
+        , NormalC(FVector3f::ZeroVector)
+    {}
+    
+    FVector3f PosA;
+    FVector3f PosB;
+    FVector3f PosC;
+    FVector3f NormalA;
+    FVector3f NormalB;
+    FVector3f NormalC;
+};
+
+struct FRTMeshInfo
+{
+    FRTMeshInfo()
+        : ComponentID(0)
+        , FirstTriangleIdx(0)
+        , NumTriangles(0)
+        , BoundMin(FVector3f::ZeroVector)
+        , BoundMax(FVector3f::ZeroVector)
+        , Material(FRayTracingMaterial())
+    {}
+    bool operator==(const FRTMeshInfo& Other) const
     {
         return ComponentID == Other.ComponentID;
     }
+    
+    uint32 ComponentID;
+    uint32 FirstTriangleIdx;
+    uint32 NumTriangles;
+    FVector3f BoundMin;
+    FVector3f BoundMax;
+    FRayTracingMaterial Material;
 };
 
 UCLASS()
@@ -53,6 +95,8 @@ public:
 	TObjectPtr<UTextureCube> SkyDomeCube = nullptr;
 
     TArray<FRTMeshRenderData> RTRenderData;
+    TArray<FRTMeshInfo> RTMeshInfos;
+    TArray<FRTTriangle> RTTriangles;
 
 protected:
 	virtual void BeginPlay() override;

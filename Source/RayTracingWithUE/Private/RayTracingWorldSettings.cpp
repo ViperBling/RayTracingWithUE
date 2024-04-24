@@ -82,50 +82,160 @@ void ARayTracingWorldSettings::GatherSceneMeshData()
 
 void ARayTracingWorldSettings::AddRTSceneComponent(URTRenderingComponent* RTComponent)
 {
-    auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    // auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    // {
+    //     return InData.ComponentID == RTComponent->GetUniqueID();
+    // });
+    // if (!Data)
+    // {
+    //     FRTMeshRenderData NewData;
+    //     NewData.ComponentID = RTComponent->GetUniqueID();
+    //     NewData.Position = FVector3f(RTComponent->GetComponentLocation());
+    //     NewData.Radius = RTComponent->Radius;
+    //     NewData.Material = RTComponent->Material;
+    //     RTRenderData.Add(NewData);
+    // }
+    // else
+    // {
+    //     Data->Position = FVector3f(RTComponent->GetComponentLocation());
+    //     Data->Radius = RTComponent->Radius;
+    //     Data->Material = RTComponent->Material;
+    // }
+
+    auto MeshInfo = RTMeshInfos.FindByPredicate([&](const FRTMeshInfo& InMeshInfo)
     {
-        return InData.ComponentID == RTComponent->GetUniqueID();
+        return InMeshInfo.ComponentID == RTComponent->GetUniqueID();
     });
-    if (!Data)
+    
+    auto ComponentTransform = RTComponent->GetComponentTransform();
+    auto StaticMesh = RTComponent->GetStaticMesh();
+    ensure(StaticMesh);
+    auto& IndexBuffer = StaticMesh->GetRenderData()->LODResources[0].IndexBuffer;
+    auto& VertexPositionBuffer = StaticMesh->GetRenderData()->LODResources[0].VertexBuffers.PositionVertexBuffer;
+    auto& VertexBuffer = StaticMesh->GetRenderData()->LODResources[0].VertexBuffers.StaticMeshVertexBuffer;
+    
+    if (!MeshInfo)
     {
-        FRTMeshRenderData NewData;
-        NewData.ComponentID = RTComponent->GetUniqueID();
-        NewData.Position = FVector3f(RTComponent->GetComponentLocation());
-        NewData.Radius = RTComponent->Radius;
-        NewData.Material = RTComponent->Material;
-        RTRenderData.Add(NewData);
+        FRTMeshInfo NewInfo;
+        NewInfo.ComponentID = RTComponent->GetUniqueID();
+        NewInfo.FirstTriangleIdx = RTTriangles.Num();
+        NewInfo.NumTriangles = StaticMesh->GetRenderData()->LODResources[0].IndexBuffer.GetNumIndices() / 3;
+        NewInfo.BoundMin = FVector3f(ComponentTransform.TransformPosition(StaticMesh->GetBoundingBox().Min));
+        NewInfo.BoundMax = FVector3f(ComponentTransform.TransformPosition(StaticMesh->GetBoundingBox().Max));
+        for (int32 i = 0; i < IndexBuffer.GetNumIndices(); i++)
+        {
+            if (i + 2 >= IndexBuffer.GetNumIndices())
+            {
+                break;
+            }
+            int32 Index1 = IndexBuffer.GetIndex(i);
+            int32 Index2 = IndexBuffer.GetIndex(i + 1);
+            int32 Index3 = IndexBuffer.GetIndex(i + 2);
+            FRTTriangle NewTriangle;
+            NewTriangle.PosA = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index1))));
+            NewTriangle.PosB = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index2))));
+            NewTriangle.PosC = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index3))));
+            NewTriangle.NormalA = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index1))));
+            NewTriangle.NormalB = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index2))));
+            NewTriangle.NormalC = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index3))));
+            RTTriangles.Add(NewTriangle);
+        }
+        NewInfo.Material = RTComponent->Material;
+        RTMeshInfos.Add(NewInfo);
     }
     else
     {
-        Data->Position = FVector3f(RTComponent->GetComponentLocation());
-        Data->Radius = RTComponent->Radius;
-        Data->Material = RTComponent->Material;
+        MeshInfo->BoundMin = FVector3f(ComponentTransform.TransformPosition(StaticMesh->GetBoundingBox().Min));
+        MeshInfo->BoundMax = FVector3f(ComponentTransform.TransformPosition(StaticMesh->GetBoundingBox().Max));
+        
+        for (uint32 i = MeshInfo->FirstTriangleIdx; i < MeshInfo->NumTriangles * 3; i++)
+        {
+            int32 Index1 = IndexBuffer.GetIndex(i);
+            int32 Index2 = IndexBuffer.GetIndex(i + 1);
+            int32 Index3 = IndexBuffer.GetIndex(i + 2);
+            RTTriangles[i].PosA = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index1))));
+            RTTriangles[i].PosB = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index2))));
+            RTTriangles[i].PosC = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index3))));
+            RTTriangles[i].NormalA = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index1))));
+            RTTriangles[i].NormalB = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index2))));
+            RTTriangles[i].NormalC = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index3))));
+        }
+        MeshInfo->Material = RTComponent->Material;
     }
 }
 
 void ARayTracingWorldSettings::RemoveRTSceneComponent(URTRenderingComponent* RTComponent)
 {
-    auto RenderData = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    // auto RenderData = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    // {
+    //     return InData.ComponentID == RTComponent->GetUniqueID();
+    // });
+    // if (RenderData)
+    // {
+    //     RTRenderData.RemoveAt(RTRenderData.Find(*RenderData));
+    // }
+    auto MeshInfo = RTMeshInfos.FindByPredicate([&](const FRTMeshInfo& InMeshInfo)
     {
-        return InData.ComponentID == RTComponent->GetUniqueID();
+        return InMeshInfo.ComponentID == RTComponent->GetUniqueID();
     });
-    if (RenderData)
+    if (MeshInfo)
     {
-        RTRenderData.RemoveAt(RTRenderData.Find(*RenderData));
+        RTTriangles.RemoveAt(MeshInfo->FirstTriangleIdx, MeshInfo->NumTriangles);
+
+        for (int32 i = 0; i < RTMeshInfos.Num(); i++)
+        {
+            if (RTMeshInfos[i].FirstTriangleIdx > MeshInfo->FirstTriangleIdx)
+            {
+                RTMeshInfos[i].FirstTriangleIdx -= MeshInfo->NumTriangles;
+            }
+        }
+        RTMeshInfos.RemoveAt(RTMeshInfos.Find(*MeshInfo));
     }
 }
 
 void ARayTracingWorldSettings::UpdateRTSceneComponent(URTRenderingComponent* RTComponent)
 {
-    auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    // auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    // {
+    //     return InData.ComponentID == RTComponent->GetUniqueID();;
+    // });
+    //
+    // if (Data)
+    // {
+    //     Data->Position = FVector3f(RTComponent->GetComponentLocation());
+    //     Data->Radius = RTComponent->Radius;
+    //     Data->Material = RTComponent->Material;
+    // }
+
+    auto MeshInfo = RTMeshInfos.FindByPredicate([&](const FRTMeshInfo& InMeshInfo)
     {
-        return InData.ComponentID == RTComponent->GetUniqueID();;
+        return InMeshInfo.ComponentID == RTComponent->GetUniqueID();
     });
 
-    if (Data)
+    auto ComponentTransform = RTComponent->GetComponentTransform();
+    auto StaticMesh = RTComponent->GetStaticMesh();
+    ensure(StaticMesh);
+    auto& IndexBuffer = StaticMesh->GetRenderData()->LODResources[0].IndexBuffer;
+    auto& VertexPositionBuffer = StaticMesh->GetRenderData()->LODResources[0].VertexBuffers.PositionVertexBuffer;
+    auto& VertexBuffer = StaticMesh->GetRenderData()->LODResources[0].VertexBuffers.StaticMeshVertexBuffer;
+    
+    if (MeshInfo)
     {
-        Data->Position = FVector3f(RTComponent->GetComponentLocation());
-        Data->Radius = RTComponent->Radius;
-        Data->Material = RTComponent->Material;
+        MeshInfo->BoundMin = FVector3f(ComponentTransform.TransformPosition(StaticMesh->GetBoundingBox().Min));
+        MeshInfo->BoundMax = FVector3f(ComponentTransform.TransformPosition(StaticMesh->GetBoundingBox().Max));
+        
+        for (uint32 i = MeshInfo->FirstTriangleIdx; i < MeshInfo->NumTriangles * 3; i++)
+        {
+            int32 Index1 = IndexBuffer.GetIndex(i);
+            int32 Index2 = IndexBuffer.GetIndex(i + 1);
+            int32 Index3 = IndexBuffer.GetIndex(i + 2);
+            RTTriangles[i].PosA = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index1))));
+            RTTriangles[i].PosB = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index2))));
+            RTTriangles[i].PosC = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index3))));
+            RTTriangles[i].NormalA = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index1))));
+            RTTriangles[i].NormalB = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index2))));
+            RTTriangles[i].NormalC = FVector3f(ComponentTransform.TransformVector(FVector4(VertexBuffer.VertexTangentZ(Index3))));
+        }
+        MeshInfo->Material = RTComponent->Material;
     }
 }
