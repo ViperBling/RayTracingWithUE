@@ -129,9 +129,9 @@ void ARayTracingWorldSettings::AddRTSceneComponent(URTRenderingComponent* RTComp
             int32 Index2 = IndexArray[i * 3 + 1];
             int32 Index3 = IndexArray[i * 3 + 2];
             FRTTriangle NewTriangle;
-            NewTriangle.PosA = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index1))));
+            NewTriangle.PosC = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index1))));
             NewTriangle.PosB = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index2))));
-            NewTriangle.PosC = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index3))));
+            NewTriangle.PosA = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index3))));
             NewTriangle.NormalA = FVector3f(ComponentTransform.TransformVector(FVector(VertexBuffer.VertexTangentZ(Index1))));
             NewTriangle.NormalB = FVector3f(ComponentTransform.TransformVector(FVector(VertexBuffer.VertexTangentZ(Index2))));
             NewTriangle.NormalC = FVector3f(ComponentTransform.TransformVector(FVector(VertexBuffer.VertexTangentZ(Index3))));
@@ -151,9 +151,9 @@ void ARayTracingWorldSettings::AddRTSceneComponent(URTRenderingComponent* RTComp
             int32 Index1 = IndexArray[i * 3 + 0];
             int32 Index2 = IndexArray[i * 3 + 1];
             int32 Index3 = IndexArray[i * 3 + 2];
-            RTTriangles[i].PosA = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index1))));
+            RTTriangles[i].PosC = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index1))));
             RTTriangles[i].PosB = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index2))));
-            RTTriangles[i].PosC = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index3))));
+            RTTriangles[i].PosA = FVector3f(ComponentTransform.TransformPosition(FVector(VertexPositionBuffer.VertexPosition(Index3))));
             RTTriangles[i].NormalA = FVector3f(ComponentTransform.TransformVector(FVector(VertexBuffer.VertexTangentZ(Index1))));
             RTTriangles[i].NormalB = FVector3f(ComponentTransform.TransformVector(FVector(VertexBuffer.VertexTangentZ(Index2))));
             RTTriangles[i].NormalC = FVector3f(ComponentTransform.TransformVector(FVector(VertexBuffer.VertexTangentZ(Index3))));
