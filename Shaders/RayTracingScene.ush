@@ -10,6 +10,12 @@
 #define MAT_METAL 2
 #define MAT_DIALECTRIC 3
 
+struct FRay
+{
+    float3 Origin;
+    float3 Direction;
+};
+
 struct FRayTracingMaterial
 {
     uint Type;
@@ -46,12 +52,6 @@ struct FHitInfo
     FRayTracingMaterial Material;
 };
 
-struct FRay
-{
-    float3 Origin;
-    float3 Direction;
-};
-
 struct FQuad
 {
     float3 Q;
@@ -75,6 +75,17 @@ struct FTriangle
     float3 NormalA;
     float3 NormalB;
     float3 NormalC;
+};
+
+struct FTriangleTest
+{
+    float3 A;
+    float3 B;
+    float3 C;
+    float3 NormalA;
+    float3 NormalB;
+    float3 NormalC;
+    FRayTracingMaterial Material;
 };
 
 struct FPlane

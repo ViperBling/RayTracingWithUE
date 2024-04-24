@@ -157,6 +157,32 @@ FHitInfo HitScene(FRay Ray, FTriangle Triangle)
     return HitInfo;
 }
 
+FHitInfo HitScene(FRay Ray, FTriangleTest Triangle)
+{
+    FHitInfo HitInfo = (FHitInfo)0;
+
+    const float EPSILON = 0.0000001;
+    float3 Edge1 = Triangle.B - Triangle.A;
+    float3 Edge2 = Triangle.C - Triangle.A;
+    float3 PVector = cross(Ray.Direction, Edge2);
+    float Det = dot(Edge1, PVector);
+
+    float InverseDet = 1.0 / Det;
+
+    float3 AO = Ray.Origin - Triangle.A;
+    float U = dot(AO, PVector) * InverseDet;
+    float3 QVector = cross(AO, Edge1);
+    float V = dot(Ray.Direction, QVector) * InverseDet;
+    float T = dot(Edge2, QVector) * InverseDet;
+
+    HitInfo.bHit = Det > EPSILON && T > 0 && U >= 0 && V >= 0 && U + V <= 1;
+    HitInfo.HitDistance = T;
+    HitInfo.HitPosition = Ray.Origin + Ray.Direction * T;
+    HitInfo.HitNormal = normalize(Triangle.NormalA * (1 - U - V) + Triangle.NormalB * U + Triangle.NormalC * V);
+	
+    return HitInfo;
+}
+
 bool RayBoundingBox(FRay Ray, float3 BoxMin, float3 BoxMax)
 {
     float3 InvDir = 1.0 / Ray.Direction;
@@ -221,22 +247,22 @@ FHitInfo HitScene(FRay Ray, FPlane Plane)
 
 FHitInfo RayCollision(FRay Ray)
 {
-	// FTriangle Triangles[2];
-	// Triangles[0].A = float3(1, 1, 1);
-	// Triangles[0].B = float3(100, 0, 0);
-	// Triangles[0].C = float3(0, 100, 0);
-	// Triangles[0].NormalA = float3(0, 0, 1);
-	// Triangles[0].NormalB = float3(0, 0, 1);
-	// Triangles[0].NormalC = float3(0, 0, 1);
-	// Triangles[0].Material = LAMBERT(float3(0.9, 0.1, 0.9));
-	//
-	// Triangles[1].A = float3(100, 0, 0);
-	// Triangles[1].B = float3(100, 100, 0);
-	// Triangles[1].C = float3(0, 100, 0);
-	// Triangles[1].NormalA = float3(0, 0, 1);
-	// Triangles[1].NormalB = float3(0, 0, 1);
-	// Triangles[1].NormalC = float3(0, 0, 1);
-	// Triangles[1].Material = METAL(float3(0.9, 0.9, 0.1), 1.0);
+	FTriangleTest Triangles[2];
+	Triangles[0].A = float3(-50,  50, 0);
+	Triangles[0].B = float3( 50, -50, 0);
+	Triangles[0].C = float3( 50,  50, 0);
+	Triangles[0].NormalA = float3(0, 0, 1);
+	Triangles[0].NormalB = float3(0, 0, 1);
+	Triangles[0].NormalC = float3(0, 0, 1);
+	Triangles[0].Material = LAMBERT(float3(0.9, 0.1, 0.9));
+	
+	Triangles[1].A = float3( 50, -50, 0);
+	Triangles[1].B = float3(-50,  50, 0);
+	Triangles[1].C = float3(-50,  -50, 0);
+	Triangles[1].NormalA = float3(0, 0, 1);
+	Triangles[1].NormalB = float3(0, 0, 1);
+	Triangles[1].NormalC = float3(0, 0, 1);
+	Triangles[1].Material = METAL(float3(0.9, 0.9, 0.1), 1.0);
 	
     FHitInfo HitInfo = (FHitInfo)0;
     HitInfo.HitDistance = INFINITE_FLOAT;
@@ -252,34 +278,36 @@ FHitInfo RayCollision(FRay Ray)
     //         HitInfo.Material = Mesh.Material;
     //     }
     // }
-	// for (int i = 0; i < 2; i++)
-	// {
-	// 	FHitInfo LocalHit = HitScene(Ray, Triangles[i]);
-	// 	if (LocalHit.bHit && LocalHit.HitDistance < HitInfo.HitDistance && LocalHit.HitDistance > 0.0001)
-	// 	{
-	// 		HitInfo = LocalHit;
-	// 		HitInfo.Material = Triangles[i].Material;
-	// 	}
-	// }
-    for (int MeshIndex = 0; MeshIndex < NumMeshes; MeshIndex++)
-    {
-        FMeshInfo MeshInfo = RTMeshInfoBuffer[MeshIndex];
-        if (!RayBoundingBox(Ray, MeshInfo.BoundMin, MeshInfo.BoundMax))
-        {
-            continue;
-        }
-        for (uint i = 0; i < MeshInfo.NumTriangles; i++)
-        {
-            int TriIndex = MeshInfo.FirstTriangleIdx + i;
-            FTriangle Triangle = RTTriangleBuffer[TriIndex];
-            FHitInfo LocalHit = HitScene(Ray, Triangle);
-            if (LocalHit.bHit && LocalHit.HitDistance < HitInfo.HitDistance)
-            {
-                HitInfo = LocalHit;
-                HitInfo.Material = MeshInfo.Material;
-            }
-        }
-    }
+    
+	for (int i = 0; i < 2; i++)
+	{
+		FHitInfo LocalHit = HitScene(Ray, Triangles[i]);
+		if (LocalHit.bHit && LocalHit.HitDistance < HitInfo.HitDistance && LocalHit.HitDistance > 0.0001)
+		{
+			HitInfo = LocalHit;
+			HitInfo.Material = Triangles[i].Material;
+		}
+	}
+    
+    // for (int MeshIndex = 0; MeshIndex < NumMeshes; MeshIndex++)
+    // {
+    //     FMeshInfo MeshInfo = RTMeshInfoBuffer[MeshIndex];
+    //     if (!RayBoundingBox(Ray, MeshInfo.BoundMin, MeshInfo.BoundMax))
+    //     {
+    //         continue;
+    //     }
+    //     for (uint i = 0; i < MeshInfo.NumTriangles; i++)
+    //     {
+    //         int TriIndex = MeshInfo.FirstTriangleIdx + i;
+    //         FTriangle Triangle = RTTriangleBuffer[TriIndex];
+    //         FHitInfo LocalHit = HitScene(Ray, Triangle);
+    //         if (LocalHit.bHit && LocalHit.HitDistance < HitInfo.HitDistance)
+    //         {
+    //             HitInfo = LocalHit;
+    //             HitInfo.Material = MeshInfo.Material;
+    //         }
+    //     }
+    // }
     
     return HitInfo;
 }
