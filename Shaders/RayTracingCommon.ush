@@ -2,8 +2,8 @@
 
 #include "RayTracingScene.ush"
 
-#define SAMPLES_PER_PIXEL 5
-#define MAX_BOUNCE 100
+#define SAMPLES_PER_PIXEL 1
+#define MAX_BOUNCE 10
 
 // PCG (permuted congruential generator). Thanks to:
 // www.pcg-random.org and www.shadertoy.com/view/XlGcRh
@@ -206,23 +206,6 @@ FHitInfo HitScene(FRay Ray, FPlane Plane)
 
 FHitInfo RayCollision(FRay Ray)
 {
-	// FTriangle Triangles[2];
-	// Triangles[0].A = float3(0, 0, 0);
-	// Triangles[0].B = float3(100, 0, 0);
-	// Triangles[0].C = float3(0, 100, 0);
-	// Triangles[0].NormalA = float3(0, 0, 1);
-	// Triangles[0].NormalB = float3(0, 0, 1);
-	// Triangles[0].NormalC = float3(0, 0, 1);
-	// Triangles[0].Material = LAMBERT(float3(0.9, 0.1, 0.9));
-	
-	// Triangles[1].A = float3(100, 0, 0);
-	// Triangles[1].B = float3(100, 100, 0);
-	// Triangles[1].C = float3(0, 100, 0);
-	// Triangles[1].NormalA = float3(0, 0, 1);
-	// Triangles[1].NormalB = float3(0, 0, 1);
-	// Triangles[1].NormalC = float3(0, 0, 1);
-	// Triangles[1].Material = LAMBERT(float3(0.9, 0.9, 0.1));
-	
     FHitInfo HitInfo = (FHitInfo)0;
     HitInfo.HitDistance = INFINITE_FLOAT;
 
