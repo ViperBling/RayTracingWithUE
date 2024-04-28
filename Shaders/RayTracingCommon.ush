@@ -209,7 +209,7 @@ FHitInfo RayCollision(FRay Ray)
     FHitInfo HitInfo = (FHitInfo)0;
     HitInfo.HitDistance = INFINITE_FLOAT;
 
-    for (int i = 0; i < NumMeshes; i++)
+    for (int i = 0; i < NumSpheres; i++)
     {
         FRTSphereInfo Mesh = RTSphereInfoBuffer[i];
         FHitInfo LocalHit = HitScene(Ray, Mesh.Position, Mesh.Radius);
