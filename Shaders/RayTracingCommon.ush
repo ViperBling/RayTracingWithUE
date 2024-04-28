@@ -2,8 +2,8 @@
 
 #include "RayTracingScene.ush"
 
-#define SAMPLES_PER_PIXEL 1
-#define MAX_BOUNCE 10
+#define SAMPLES_PER_PIXEL 4
+#define MAX_BOUNCE 100
 
 // PCG (permuted congruential generator). Thanks to:
 // www.pcg-random.org and www.shadertoy.com/view/XlGcRh
@@ -211,7 +211,7 @@ FHitInfo RayCollision(FRay Ray)
 
     for (int i = 0; i < NumMeshes; i++)
     {
-        FRTMeshRenderData Mesh = RTRenderDataBuffer[i];
+        FRTSphereInfo Mesh = RTSphereInfoBuffer[i];
         FHitInfo LocalHit = HitScene(Ray, Mesh.Position, Mesh.Radius);
     
         if (LocalHit.bHit && LocalHit.HitDistance < HitInfo.HitDistance && LocalHit.HitDistance > 0.0001)

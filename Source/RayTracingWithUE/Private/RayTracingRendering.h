@@ -15,8 +15,8 @@ public:
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters,)
 		SHADER_PARAMETER_STRUCT_REF(FViewUniformShaderParameters, View)
-		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FRTMeshRenderData>, RTRenderDataBuffer)
-        SHADER_PARAMETER(uint32, NumMeshes)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FRTSphereInfo>, RTSphereInfoBuffer)
+        SHADER_PARAMETER(uint32, NumSpheres)
 		SHADER_PARAMETER_TEXTURE(TextureCube, SkyDomeCube)
 		SHADER_PARAMETER_SAMPLER(SamplerState, SkyDomeCubeSampler)
         SHADER_PARAMETER(uint32, FrameCounter)

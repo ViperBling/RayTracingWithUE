@@ -10,9 +10,9 @@ class URTRenderingComponent;
 class UEditorActorSubsystem;
 class UTextureCube;
 
-struct FRTMeshRenderData
+struct FRTSphereInfo
 {
-	FRTMeshRenderData()
+	FRTSphereInfo()
 		: ComponentID(0)
 		, Position(FVector::ZeroVector)
 		, Radius(0.0f)
@@ -24,7 +24,7 @@ struct FRTMeshRenderData
     float Radius;
     FRayTracingMaterial Material;
 
-    bool operator==(const FRTMeshRenderData& Other) const
+    bool operator==(const FRTSphereInfo& Other) const
     {
         return ComponentID == Other.ComponentID;
     }
@@ -52,7 +52,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = RayTracingWithUE)
 	TObjectPtr<UTextureCube> SkyDomeCube = nullptr;
 
-    TArray<FRTMeshRenderData> RTRenderData;
+    TArray<FRTSphereInfo> RTSphereInfos;
 
 protected:
 	virtual void BeginPlay() override;

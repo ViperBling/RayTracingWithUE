@@ -55,7 +55,7 @@ void URayTracingWorldSubSystem::Tick(float DeltaTime)
 		{
 			TempSettings.SkyDomeCube = GSystemTextures.CubeBlackDummy->GetRHI();
 		}
-		TempSettings.RTRenderData = RayTracingWorldSettings->RTRenderData;
+		TempSettings.RTSphereInfos = RayTracingWorldSettings->RTSphereInfos;
 		FScopeLock Lock(&Mutex);
 		SettingsProxy = TempSettings;
 	}

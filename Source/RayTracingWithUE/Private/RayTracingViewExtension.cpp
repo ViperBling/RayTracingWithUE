@@ -52,24 +52,20 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 		FRDGTextureDesc Desc = FRDGTextureDesc::Create2D(Viewport.Extent, PF_A32B32G32R32F, FClearValueBinding::Black, TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable);
 		RayTracingResultTexture = GraphBuilder.CreateTexture(Desc, TEXT("RayTracingOut"), ERDGTextureFlags::MultiFrame);
 
-	    uint32 MeshCount = SettingsProxy.RTRenderData.Num();
-	    if (MeshCount == 0)
-        {
-            return;
-        }
-
-	    TRefCountPtr<FRDGPooledBuffer> RTRenderDataBuffer;
+	    uint32 MeshCount = SettingsProxy.RTSphereInfos.Num();
+	    TRefCountPtr<FRDGPooledBuffer> RTSphereInfoBuffer;
 		auto& RHICmdList = GraphBuilder.RHICmdList;
-		FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTMeshRenderData), MeshCount);
-		AllocatePooledBuffer(BufferDesc, RTRenderDataBuffer, TEXT("RTRenderDataBuffer"));
-	    
-	    // ResizeBufferIfNeeded(GraphBuilder, SettingsProxy.RTRenderDataBuffer, BufferDesc, TEXT("RTRenderDataBuffer"));
-	    
-		void* BufferData = RHICmdList.LockBuffer(RTRenderDataBuffer->GetRHI(), 0, sizeof(FRTMeshRenderData) * MeshCount, RLM_WriteOnly);
-		FMemory::Memcpy(BufferData, SettingsProxy.RTRenderData.GetData(), sizeof(FRTMeshRenderData) * MeshCount);
-		RHICmdList.UnlockBuffer(RTRenderDataBuffer->GetRHI());
+		FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTSphereInfo), FMathf::Clamp(MeshCount, 1, MeshCount));
+		AllocatePooledBuffer(BufferDesc, RTSphereInfoBuffer, TEXT("RTSphereInfoBuffer"));
 
-		auto MeshRenderData = GraphBuilder.RegisterExternalBuffer(RTRenderDataBuffer, TEXT("MeshDataBuffer"));
+	    if (MeshCount > 0)
+	    {
+	        void* BufferData = RHICmdList.LockBuffer(RTSphereInfoBuffer->GetRHI(), 0, sizeof(FRTSphereInfo) * MeshCount, RLM_WriteOnly);
+	        FMemory::Memcpy(BufferData, SettingsProxy.RTSphereInfos.GetData(), sizeof(FRTSphereInfo) * MeshCount);
+	        RHICmdList.UnlockBuffer(RTSphereInfoBuffer->GetRHI());
+	    }
+	    
+		auto SphereInfoBuffer = GraphBuilder.RegisterExternalBuffer(RTSphereInfoBuffer, TEXT("SphereInfoBuffer"));
 	    
 	    bool bShouldResize = false;
 	    if (ViewRectSize != Viewport.Extent || LastFrameViewMatrix != InView.ViewMatrices.GetViewMatrix())
@@ -91,8 +87,8 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	    
 		auto* RayTracingCSParams = GraphBuilder.AllocParameters<FRayTracingCS::FParameters>();
 		RayTracingCSParams->View = View.ViewUniformBuffer;
-		RayTracingCSParams->RTRenderDataBuffer = GraphBuilder.CreateSRV(MeshRenderData, PF_R32G32B32F);
-	    RayTracingCSParams->NumMeshes = MeshCount;
+		RayTracingCSParams->RTSphereInfoBuffer = GraphBuilder.CreateSRV(SphereInfoBuffer, PF_R32G32B32F);
+	    RayTracingCSParams->NumSpheres = MeshCount;
 	    RayTracingCSParams->FrameCounter = FrameCounter;
 		RayTracingCSParams->SkyDomeCube = SettingsProxy.SkyDomeCube == nullptr ? GSystemTextures.CubeBlackDummy->GetRHI() : SettingsProxy.SkyDomeCube;
 		RayTracingCSParams->SkyDomeCubeSampler = TStaticSamplerState<SF_Bilinear>::GetRHI();

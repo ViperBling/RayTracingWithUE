@@ -82,18 +82,18 @@ void ARayTracingWorldSettings::GatherSceneMeshData()
 
 void ARayTracingWorldSettings::AddRTSceneComponent(URTRenderingComponent* RTComponent)
 {
-    auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    auto Data = RTSphereInfos.FindByPredicate([&](const FRTSphereInfo& InData)
     {
         return InData.ComponentID == RTComponent->GetUniqueID();
     });
     if (!Data)
     {
-        FRTMeshRenderData NewData;
+        FRTSphereInfo NewData;
         NewData.ComponentID = RTComponent->GetUniqueID();
         NewData.Position = FVector3f(RTComponent->GetComponentLocation());
         NewData.Radius = RTComponent->Radius;
         NewData.Material = RTComponent->Material;
-        RTRenderData.Add(NewData);
+        RTSphereInfos.Add(NewData);
     }
     else
     {
@@ -105,19 +105,19 @@ void ARayTracingWorldSettings::AddRTSceneComponent(URTRenderingComponent* RTComp
 
 void ARayTracingWorldSettings::RemoveRTSceneComponent(URTRenderingComponent* RTComponent)
 {
-    auto RenderData = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    auto RenderData = RTSphereInfos.FindByPredicate([&](const FRTSphereInfo& InData)
     {
         return InData.ComponentID == RTComponent->GetUniqueID();
     });
     if (RenderData)
     {
-        RTRenderData.RemoveAt(RTRenderData.Find(*RenderData));
+        RTSphereInfos.RemoveAt(RTSphereInfos.Find(*RenderData));
     }
 }
 
 void ARayTracingWorldSettings::UpdateRTSceneComponent(URTRenderingComponent* RTComponent)
 {
-    auto Data = RTRenderData.FindByPredicate([&](const FRTMeshRenderData& InData)
+    auto Data = RTSphereInfos.FindByPredicate([&](const FRTSphereInfo& InData)
     {
         return InData.ComponentID == RTComponent->GetUniqueID();;
     });

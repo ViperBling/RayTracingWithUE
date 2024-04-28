@@ -19,7 +19,7 @@ struct FRayTracingMaterial
     float RefractiveIndex;
 };
 
-struct FRTMeshRenderData
+struct FRTSphereInfo
 {
     uint ID;
     float3 Position;
@@ -27,8 +27,8 @@ struct FRTMeshRenderData
     FRayTracingMaterial Material;
 };
 
-StructuredBuffer<FRTMeshRenderData> RTRenderDataBuffer;
-uint NumMeshes;
+StructuredBuffer<FRTSphereInfo> RTSphereInfoBuffer;
+uint NumSpheres;
 
 struct FHitInfo
 {
