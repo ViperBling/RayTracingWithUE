@@ -55,7 +55,7 @@ void FRayTracingViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& Grap
 	    uint32 MeshCount = SettingsProxy.RTSphereInfos.Num();
 	    TRefCountPtr<FRDGPooledBuffer> RTSphereInfoBuffer;
 		auto& RHICmdList = GraphBuilder.RHICmdList;
-		FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTSphereInfo), FMathf::Clamp(MeshCount, 1, MeshCount));
+		FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FRTSphereInfo), FMath::Clamp(MeshCount, 1, MeshCount));
 		AllocatePooledBuffer(BufferDesc, RTSphereInfoBuffer, TEXT("RTSphereInfoBuffer"));
 
 	    if (MeshCount > 0)
